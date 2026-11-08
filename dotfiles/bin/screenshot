@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📸 Arch Sway Workstation - Fast Screenshot & Annotation Tool
+# Auto-copies image to clipboard immediately, then opens Satty for editing
+# ==============================================================================
+
+set -e
+
+SCREENSHOTS_DIR="$HOME/Pictures/Screenshots"
+mkdir -p "$SCREENSHOTS_DIR"
+
+TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
+FINAL_FILE="${SCREENSHOTS_DIR}/screenshot_${TIMESTAMP}.png"
+
+MODE="${1:-area}"
+
+case "$MODE" in
+    full)
+        grim "$FINAL_FILE"
+        ;;
+    area|*)
+        GEOM=$(slurp -b "#283b3288" -c "#a7c080" -w 2 2>/dev/null || true)
+        if [[ -z "$GEOM" ]]; then
+            # User canceled selection (e.g. pressed Escape)
+            exit 0
+        fi
+        grim -g "$GEOM" "$FINAL_FILE"
+        ;;
+esac
+
+if [[ ! -s "$FINAL_FILE" ]]; then
+    exit 0
+fi
+
+# 1. Immediately copy to clipboard
+wl-copy -t image/png < "$FINAL_FILE"
+
+# 2. Notify user
+notify-send -a "Screenshot" -i camera-photo "Screenshot Captured" "Copied to clipboard. Opening editor..." -t 1500 2>/dev/null || true
+
+# 3. Open in Satty for annotations (Highlighter, Arrows, Text, Blur, Crop)
+# Satty updates clipboard on copy and saves on Ctrl+S
+# --resize smart ensures the window stays comfortably centered with top bar visible
+satty --filename "$FINAL_FILE" --resize smart 2>/dev/null

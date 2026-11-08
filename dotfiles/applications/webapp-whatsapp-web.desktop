@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=WhatsApp Web
+Comment=WhatsApp Web Web Application
+Exec=chromium --app="https://web.whatsapp.com" --name="webapp-whatsapp-web" --class="WebApp-whatsapp-web"
+Icon=webapp-whatsapp-web
+Terminal=false
+StartupNotify=true
+Categories=Network;WebApplication;
+StartupWMClass=chrome-whatsapp-web

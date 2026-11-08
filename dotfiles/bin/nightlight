@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🌙 Arch Sway Workstation - Nightlight Controller (wlsunset)
+# Native wlroots Wayland color temperature controller with Waybar JSON support
+# ==============================================================================
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightlight"
+TEMP_FILE="$CONFIG_DIR/temp"
+PID_FILE="$CONFIG_DIR/wlsunset.pid"
+
+mkdir -p "$CONFIG_DIR"
+
+# Defaults
+DEFAULT_TEMP=4000
+MIN_TEMP=2500
+MAX_TEMP=6000
+STEP=250
+
+get_temp() {
+    if [[ -f "$TEMP_FILE" ]]; then
+        local t
+        t=$(<"$TEMP_FILE")
+        if [[ "$t" =~ ^[0-9]+$ ]] && (( t >= MIN_TEMP && t <= MAX_TEMP )); then
+            echo "$t"
+            return
+        fi
+    fi
+    echo "$DEFAULT_TEMP"
+}
+
+set_temp() {
+    local new_temp="$1"
+    if (( new_temp < MIN_TEMP )); then new_temp=$MIN_TEMP; fi
+    if (( new_temp > MAX_TEMP )); then new_temp=$MAX_TEMP; fi
+    echo "$new_temp" > "$TEMP_FILE"
+}
+
+is_running() {
+    pgrep -x wlsunset >/dev/null 2>&1
+}
+
+start_wlsunset() {
+    local temp
+    temp=$(get_temp)
+    # Kill any existing instance
+    pkill -x wlsunset >/dev/null 2>&1 || true
+    # Run wlsunset daemonized in night mode
+    setsid -f wlsunset -t "$temp" -T 6500 -S 00:00 -s 00:01 -d 1 </dev/null >/dev/null 2>&1
+}
+
+stop_wlsunset() {
+    pkill -x wlsunset >/dev/null 2>&1 || true
+}
+
+signal_waybar() {
+    pkill -RTMIN+8 waybar >/dev/null 2>&1 || true
+    pkill -SIGRTMIN+8 waybar >/dev/null 2>&1 || true
+}
+
+case "${1:-status}" in
+    toggle)
+        if is_running; then
+            stop_wlsunset
+        else
+            start_wlsunset
+        fi
+        signal_waybar
+        ;;
+    on)
+        start_wlsunset
+        signal_waybar
+        ;;
+    off)
+        stop_wlsunset
+        signal_waybar
+        ;;
+    inc|up)
+        current=$(get_temp)
+        set_temp $(( current + STEP ))
+        if is_running; then
+            start_wlsunset
+        fi
+        signal_waybar
+        ;;
+    dec|down)
+        current=$(get_temp)
+        set_temp $(( current - STEP ))
+        if is_running; then
+            start_wlsunset
+        fi
+        signal_waybar
+        ;;
+    cycle)
+        current=$(get_temp)
+        case "$current" in
+            2500) next=3000 ;;
+            3000) next=3500 ;;
+            3500) next=4000 ;;
+            4000) next=4500 ;;
+            4500) next=5000 ;;
+            5000) next=5500 ;;
+            *)    next=3500 ;;
+        esac
+        set_temp "$next"
+        if is_running; then
+            start_wlsunset
+        fi
+        signal_waybar
+        ;;
+    status)
+        temp=$(get_temp)
+        if is_running; then
+            printf '{"text":"󰖔 %sK","tooltip":"Night Light: ON (%sK)\\n\\n• Left Click: Toggle Off\\n• Right Click: Cycle Preset\\n• Scroll: Adjust Temp (+/- %sK)","class":"active","alt":"active"}\n' "$temp" "$temp" "$STEP"
+        else
+            printf '{"text":"󰖔 Off","tooltip":"Night Light: OFF (Target: %sK)\\n\\n• Left Click: Toggle On\\n• Right Click: Cycle Preset\\n• Scroll: Adjust Temp (+/- %sK)","class":"inactive","alt":"inactive"}\n' "$temp" "$STEP"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {toggle|on|off|inc|dec|cycle|status}"
+        exit 1
+        ;;
+esac

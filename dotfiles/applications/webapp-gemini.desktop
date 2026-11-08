@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Gemini
+Comment=Gemini Web Application
+Exec=chromium --app="https://gemini.google.com/" --name="webapp-gemini" --class="WebApp-gemini"
+Icon=webapp-gemini
+Terminal=false
+StartupNotify=true
+Categories=Network;WebApplication;
+StartupWMClass=chrome-gemini

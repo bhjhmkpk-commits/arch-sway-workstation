@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Calender
+Comment=Calender Web Application
+Exec=chromium --app="https://calendar.google.com/calendar" --name="webapp-calender" --class="WebApp-calender"
+Icon=webapp-calender
+Terminal=false
+StartupNotify=true
+Categories=Network;WebApplication;
+StartupWMClass=chrome-calender

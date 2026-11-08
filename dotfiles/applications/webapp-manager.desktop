@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Web App Manager
+Comment=Create and manage standalone frameless web applications
+Exec=/home/bohar/.local/bin/webapp gui
+Icon=preferences-desktop-applications
+Terminal=false
+StartupNotify=true
+Categories=Utility;Settings;
+Keywords=pwa;webapp;chrome;browser;app;

@@ -1,0 +1,14 @@
+width=520
+height=420
+location=center
+show=drun
+prompt=  Search Applications...
+filter_rate=100
+allow_images=true
+image_size=32
+term=foot
+hide_scroll=true
+no_actions=true
+insensitive=true
+parse_search=true
+style=~/.config/wofi/style.css

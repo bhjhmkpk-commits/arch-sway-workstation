@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📋 Arch Sway Workstation - Clipboard History Menu (Cliphist + Wofi)
+# Zero background overhead, instant retrieval, copy & clear
+# ==============================================================================
+
+CLEAR_LABEL="🧹 [Clear All Clipboard History]"
+
+raw_list=$(cliphist list 2>/dev/null || true)
+
+if [[ -z "$raw_list" ]]; then
+    notify-send -a "Clipboard" -i edit-paste "Clipboard is Empty" "No copied items in history." -t 1500 2>/dev/null || true
+    exit 0
+fi
+
+selected=$(printf '%s\n%s' "$CLEAR_LABEL" "$raw_list" | wofi --dmenu --prompt "📋 Clipboard" --lines 12)
+
+if [[ -z "$selected" ]]; then
+    exit 0
+fi
+
+if [[ "$selected" == "$CLEAR_LABEL" ]]; then
+    confirm=$(printf "Yes, Clear All History\nNo, Cancel" | wofi --dmenu --prompt "⚠️ Confirm Wipe?" --lines 2)
+    if [[ "$confirm" == "Yes, Clear All History" ]]; then
+        cliphist wipe
+        wl-copy -c
+        notify-send -a "Clipboard" -i edit-clear "Clipboard Cleared" "All clipboard history has been deleted." -t 2000 2>/dev/null || true
+    fi
+else
+    echo "$selected" | cliphist decode | wl-copy
+    text_preview=$(echo "$selected" | cut -f2- | head -c 40)
+    notify-send -a "Clipboard" -i edit-paste "Copied to Clipboard" "$text_preview..." -t 1500 2>/dev/null || true
+fi

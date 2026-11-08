@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=YouTube Music
+Comment=YouTube Music Web Application
+Exec=chromium --app="https://music.youtube.com" --name="webapp-youtube-music" --class="WebApp-youtube-music"
+Icon=webapp-youtube-music
+Terminal=false
+StartupNotify=true
+Categories=Network;WebApplication;
+StartupWMClass=chrome-youtube-music

@@ -1,0 +1,67 @@
+# Core Sway Wayland Compositor & Shell
+sway
+swaybg
+swayidle
+swaylock
+waybar
+foot
+wofi
+mako
+xdg-desktop-portal-wlr
+xdg-desktop-portal-gtk
+xorg-xwayland
+polkit-gnome
+
+# Typography & Fonts
+ttf-jetbrains-mono-nerd
+noto-fonts
+noto-fonts-emoji
+hicolor-icon-theme
+
+# Everyday Media, Documents & Archive Suite
+viewnior
+mpv
+xreader
+thunar
+thunar-archive-plugin
+tumbler
+gvfs
+xarchiver
+unzip
+7zip
+
+# Audio & Volume Routing (PipeWire)
+pipewire
+pipewire-pulse
+wireplumber
+pamixer
+pavucontrol
+playerctl
+sound-theme-freedesktop
+
+# Screenshot & Annotation Suite
+satty
+grim
+slurp
+wl-clipboard
+cliphist
+
+# Hardware, Eye-Care & Wellbeing Controls
+brightnessctl
+wlsunset
+zenity
+
+# Web Browser & PWA Engine
+chromium
+
+# Terminal Tools & Utilities
+btop
+eza
+ripgrep
+fzf
+fastfetch
+tmux
+neovim
+git
+curl
+wget

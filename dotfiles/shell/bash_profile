@@ -1,0 +1,9 @@
+# ~/.bash_profile - Arch Sway Workstation
+[[ -f ~/.bashrc ]] && . ~/.bashrc
+
+# Auto-start Sway upon login on tty1 (zero display-manager bloat)
+if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    exec sway
+fi
+
+export PATH="$HOME/.local/bin:$PATH"

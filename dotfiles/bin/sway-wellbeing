@@ -1,0 +1,645 @@
+#!/usr/bin/env python3
+"""
+🌿 Arch Sway Workstation - Wellbeing & Screen Care Daemon & Waybar Integration
+Ultra-low resource (<10MB RAM, ~0.0% CPU) screen-on-time tracker & eye care timer.
+"""
+
+import os
+import sys
+import time
+import json
+import glob
+import select
+import socket
+import struct
+import subprocess
+from datetime import datetime, date, timedelta
+from pathlib import Path
+
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "wellbeing"
+STATE_FILE = STATE_DIR / "state.json"
+SOCK_FILE = STATE_DIR / "daemon.sock"
+
+DEFAULT_WORK_MIN = 45
+DEFAULT_BREAK_MIN = 15
+DEFAULT_GOAL_HOURS = 6
+
+def get_today_str():
+    return datetime.now().strftime("%Y-%m-%d")
+
+def load_saved_state():
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def init_state():
+    saved = load_saved_state()
+    today = get_today_str()
+
+    if saved.get("date") == today:
+        state = saved
+    else:
+        history = saved.get("history", {})
+        if "date" in saved and "screen_time" in saved:
+            history[saved["date"]] = saved["screen_time"]
+            if len(history) > 30:
+                oldest = sorted(history.keys())[0]
+                history.pop(oldest, None)
+
+        saved_timer = saved.get("eye_care", {})
+        saved_goal = saved.get("screen_time", {}).get("goal_hours", DEFAULT_GOAL_HOURS)
+
+        state = {
+            "date": today,
+            "screen_time": {
+                "sot_seconds": 0,
+                "goal_hours": saved_goal,
+                "goal_reached": False,
+                "goal_notified": False,
+                "apps": {}
+            },
+            "eye_care": {
+                "enabled": True,
+                "phase": "work",
+                "paused": False,
+                "work_duration": saved_timer.get("work_duration", DEFAULT_WORK_MIN * 60),
+                "break_duration": saved_timer.get("break_duration", DEFAULT_BREAK_MIN * 60),
+                "remaining_seconds": saved_timer.get("work_duration", DEFAULT_WORK_MIN * 60),
+                "cycle_count": 0,
+                "continuous": True
+            },
+            "history": history
+        }
+
+    # Guarantees
+    if "screen_time" not in state:
+        state["screen_time"] = {"sot_seconds": 0, "goal_hours": DEFAULT_GOAL_HOURS, "goal_reached": False, "goal_notified": False, "apps": {}}
+    if "eye_care" not in state:
+        state["eye_care"] = {
+            "enabled": True, "phase": "work", "paused": False,
+            "work_duration": DEFAULT_WORK_MIN * 60, "break_duration": DEFAULT_BREAK_MIN * 60,
+            "remaining_seconds": DEFAULT_WORK_MIN * 60, "cycle_count": 0, "continuous": True
+        }
+    if "history" not in state:
+        state["history"] = {}
+
+    return state
+
+def save_state(state):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    state["updated_at"] = int(time.time())
+    tmp = STATE_FILE.with_suffix(".tmp")
+    try:
+        with open(tmp, "w") as f:
+            json.dump(state, f, indent=2)
+            f.write("\n")
+        tmp.replace(STATE_FILE)
+    except Exception as e:
+        sys.stderr.write(f"Error saving state: {e}\n")
+
+# ── Zero-Fork Sway IPC ────────────────────────────────────────────────────────
+
+def get_swaysock_path():
+    p = os.environ.get("SWAYSOCK")
+    if p and os.path.exists(p):
+        return p
+    socks = glob.glob(f"/run/user/{os.getuid()}/sway-ipc.*.sock")
+    if socks:
+        return socks[0]
+    return None
+
+def sway_ipc(msg_type, payload=b""):
+    sock_path = get_swaysock_path()
+    if not sock_path:
+        return None
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(0.3)
+        s.connect(sock_path)
+        msg = b"i3-ipc" + struct.pack("=II", len(payload), msg_type) + payload
+        s.sendall(msg)
+        header = s.recv(14)
+        if len(header) < 14:
+            s.close()
+            return None
+        magic, length, mtype = struct.unpack("=6sII", header)
+        data = b""
+        while len(data) < length:
+            chunk = s.recv(min(8192, length - len(data)))
+            if not chunk:
+                break
+            data += chunk
+        s.close()
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        return None
+
+def is_display_awake():
+    outputs = sway_ipc(3) # GET_OUTPUTS
+    if not outputs or not isinstance(outputs, list):
+        return True
+    return any(o.get("power", True) and o.get("active", True) for o in outputs)
+
+def is_session_locked():
+    # Fast /proc inspection with zero subprocess fork
+    try:
+        for pid in os.listdir("/proc"):
+            if pid.isdigit():
+                comm_path = f"/proc/{pid}/comm"
+                if os.path.exists(comm_path):
+                    with open(comm_path, "r") as f:
+                        if f.read().strip() == "swaylock":
+                            return True
+    except Exception:
+        pass
+    return False
+
+def clean_app_identity(app_id, class_name, title):
+    app = (app_id or "").lower()
+    cls = (class_name or "").lower()
+    t = (title or "").lower()
+
+    if not app and not cls and not t:
+        return None
+
+    if "swaylock" in app or "swaylock" in cls or "wofi" in app:
+        return None
+
+    if "foot" in app or "terminal" in app:
+        if "nvim" in t or "vim" in t:
+            return "Neovim"
+        elif "agy" in t:
+            return "Antigravity CLI"
+        elif "tmux" in t:
+            return "Tmux Session"
+        elif "yazi" in t:
+            return "Yazi File Manager"
+        elif "top" in t or "btop" in t:
+            return "System Monitor"
+        return "Foot Terminal"
+
+    if "brave" in app or "brave" in cls:
+        return "Brave Origin"
+    if "chromium" in app or "chromium" in cls:
+        if "youtube music" in t:
+            return "YouTube Music"
+        elif "youtube" in t:
+            return "YouTube"
+        return "Chromium Browser"
+    if "firefox" in app or "firefox" in cls:
+        return "Firefox"
+    if "thunar" in app or "thunar" in cls:
+        return "Thunar File Manager"
+
+    raw = app_id or class_name or title
+    return raw[:20].capitalize()
+
+def get_active_app():
+    tree = sway_ipc(4) # GET_TREE
+    if not tree:
+        return None
+
+    def find_focused(node):
+        if node.get("focused"):
+            return node
+        for f in node.get("floating_nodes", []):
+            r = find_focused(f)
+            if r: return r
+        for n in node.get("nodes", []):
+            r = find_focused(n)
+            if r: return r
+        return None
+
+    focused = find_focused(tree)
+    if not focused:
+        return None
+
+    app_id = focused.get("app_id")
+    class_name = focused.get("window_properties", {}).get("class")
+    title = focused.get("name")
+    return clean_app_identity(app_id, class_name, title)
+
+# ── Audio & Notification ──────────────────────────────────────────────────────
+
+def play_sound(sound_name):
+    path = f"/usr/share/sounds/freedesktop/stereo/{sound_name}.oga"
+    if os.path.exists(path):
+        try:
+            subprocess.Popen(["pw-play", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+
+def send_notification(summary, body, urgency="normal"):
+    try:
+        subprocess.Popen([
+            "notify-send",
+            "-a", "Wellbeing",
+            "-i", "preferences-desktop-display",
+            "-u", urgency,
+            summary, body
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+# ── Formatting Helpers ────────────────────────────────────────────────────────
+
+def format_timer(secs):
+    s = max(0, int(secs))
+    m = s // 60
+    rem_s = s % 60
+    return f"{m:02d}:{rem_s:02d}"
+
+def format_sot(secs):
+    total_mins = max(0, int(secs)) // 60
+    h = total_mins // 60
+    m = total_mins % 60
+    if h > 0:
+        return f"{h}h {m:02d}m"
+    return f"{m}m"
+
+# ── Daemon Server ─────────────────────────────────────────────────────────────
+
+def run_daemon():
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    if SOCK_FILE.exists():
+        try:
+            SOCK_FILE.unlink()
+        except Exception:
+            pass
+
+    server_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server_sock.bind(str(SOCK_FILE))
+    server_sock.listen(5)
+    server_sock.setblocking(False)
+
+    state = init_state()
+    save_state(state)
+
+    last_tick = time.time()
+    last_save = time.time()
+
+    print(f"Wellbeing daemon active on {SOCK_FILE}")
+
+    try:
+        while True:
+            # Handle client commands over socket
+            readable, _, _ = select.select([server_sock], [], [], 0.25)
+            for s in readable:
+                conn, _ = s.accept()
+                try:
+                    data = conn.recv(4096).decode("utf-8").strip()
+                    if data:
+                        req = json.loads(data)
+                        resp = handle_command(state, req)
+                        conn.sendall(json.dumps(resp).encode("utf-8") + b"\n")
+                        save_state(state)
+                except Exception as ex:
+                    try:
+                        conn.sendall(json.dumps({"status": "error", "message": str(ex)}).encode("utf-8") + b"\n")
+                    except Exception:
+                        pass
+                finally:
+                    conn.close()
+
+            now = time.time()
+            if now - last_tick >= 1.0:
+                elapsed = int(now - last_tick)
+                last_tick = now
+
+                # Midnight rollover
+                today = get_today_str()
+                if state.get("date") != today:
+                    state = init_state()
+
+                awake = is_display_awake()
+                locked = is_session_locked()
+
+                st = state["screen_time"]
+                ec = state["eye_care"]
+
+                if awake and not locked:
+                    # 1. Screen Time
+                    st["sot_seconds"] += elapsed
+                    goal_hours = st.get("goal_hours", 0)
+                    if goal_hours > 0 and st["sot_seconds"] >= goal_hours * 3600:
+                        st["goal_reached"] = True
+                        if not st.get("goal_notified", False):
+                            st["goal_notified"] = True
+                            hrs = st["sot_seconds"] // 3600
+                            mins = (st["sot_seconds"] % 3600) // 60
+                            play_sound("complete")
+                            send_notification(
+                                "🎯 Screen Time Goal Reached!",
+                                f"You have reached your daily goal of {goal_hours}h ({hrs}h {mins}m recorded). Time to step back and rest your eyes!",
+                                urgency="critical"
+                            )
+
+                    # 2. App usage tracking
+                    app = get_active_app()
+                    if app:
+                        st["apps"][app] = st["apps"].get(app, 0) + elapsed
+
+                    # 3. Eye Care Timer
+                    if ec.get("enabled", True) and not ec.get("paused", False):
+                        ec["remaining_seconds"] = max(0, ec["remaining_seconds"] - elapsed)
+
+                        if ec["remaining_seconds"] <= 0:
+                            if ec["phase"] == "work":
+                                play_sound("alarm-clock-elapsed")
+                                break_m = ec["break_duration"] // 60
+                                send_notification(
+                                    "👀 Time for an Eye Care Break!",
+                                    f"Great focus block! Look away 20 feet for {break_m} min to relax your ciliary muscles.",
+                                    urgency="critical"
+                                )
+                                ec["phase"] = "break"
+                                ec["remaining_seconds"] = ec["break_duration"]
+                                ec["cycle_count"] = ec.get("cycle_count", 0) + 1
+                            elif ec["phase"] == "break":
+                                play_sound("bell")
+                                work_m = ec["work_duration"] // 60
+                                send_notification(
+                                    "✨ Eye Care Break Complete!",
+                                    f"Eyes are refreshed. Ready for your next {work_m} min session!",
+                                    urgency="normal"
+                                )
+                                ec["phase"] = "work"
+                                ec["remaining_seconds"] = ec["work_duration"]
+
+                            save_state(state)
+                            last_save = now
+
+                # Sync state periodically
+                if now - last_save >= 2.0:
+                    save_state(state)
+                    last_save = now
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        save_state(state)
+        if SOCK_FILE.exists():
+            SOCK_FILE.unlink()
+
+def handle_command(state, req):
+    cmd = req.get("command", "")
+    ec = state["eye_care"]
+    st = state["screen_time"]
+
+    if cmd == "status":
+        return {"status": "ok", "state": state}
+    elif cmd == "toggle":
+        ec["paused"] = not ec.get("paused", False)
+        return {"status": "ok", "paused": ec["paused"], "phase": ec["phase"]}
+    elif cmd == "pause":
+        ec["paused"] = True
+        return {"status": "ok", "paused": True}
+    elif cmd == "resume":
+        ec["paused"] = False
+        return {"status": "ok", "paused": False}
+    elif cmd == "reset":
+        if ec["phase"] == "break":
+            ec["remaining_seconds"] = ec["break_duration"]
+        else:
+            ec["phase"] = "work"
+            ec["remaining_seconds"] = ec["work_duration"]
+        ec["paused"] = False
+        return {"status": "ok", "remaining": ec["remaining_seconds"]}
+    elif cmd == "skip":
+        if ec["phase"] == "work":
+            ec["phase"] = "break"
+            ec["remaining_seconds"] = ec["break_duration"]
+            ec["cycle_count"] = ec.get("cycle_count", 0) + 1
+        else:
+            ec["phase"] = "work"
+            ec["remaining_seconds"] = ec["work_duration"]
+        ec["paused"] = False
+        return {"status": "ok", "phase": ec["phase"], "remaining": ec["remaining_seconds"]}
+    elif cmd == "snooze":
+        ec["phase"] = "work"
+        ec["remaining_seconds"] = 300 # 5 min
+        ec["paused"] = False
+        return {"status": "ok", "remaining": 300}
+    elif cmd == "set_work":
+        m = int(req.get("minutes", DEFAULT_WORK_MIN))
+        ec["work_duration"] = max(1, m) * 60
+        if ec["phase"] == "work" and ec["remaining_seconds"] > ec["work_duration"]:
+            ec["remaining_seconds"] = ec["work_duration"]
+        return {"status": "ok", "work_duration": ec["work_duration"]}
+    elif cmd == "set_break":
+        m = int(req.get("minutes", DEFAULT_BREAK_MIN))
+        ec["break_duration"] = max(1, m) * 60
+        if ec["phase"] == "break" and ec["remaining_seconds"] > ec["break_duration"]:
+            ec["remaining_seconds"] = ec["break_duration"]
+        return {"status": "ok", "break_duration": ec["break_duration"]}
+    elif cmd == "set_goal":
+        h = int(req.get("hours", DEFAULT_GOAL_HOURS))
+        st["goal_hours"] = max(1, h)
+        st["goal_notified"] = False
+        return {"status": "ok", "goal_hours": st["goal_hours"]}
+
+    return {"status": "error", "message": f"Unknown command {cmd}"}
+
+# ── Client IPC ────────────────────────────────────────────────────────────────
+
+def send_client_command(cmd_dict):
+    if not SOCK_FILE.exists():
+        return None
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        s.connect(str(SOCK_FILE))
+        s.sendall(json.dumps(cmd_dict).encode("utf-8") + b"\n")
+        data = s.recv(4096).decode("utf-8")
+        s.close()
+        return json.loads(data)
+    except Exception:
+        return None
+
+# ── Waybar Streaming Mode ────────────────────────────────────────────────────
+
+def run_stream():
+    """Outputs JSON continuously to Waybar stdout at 1 line/sec (0 forks)."""
+    while True:
+        try:
+            state = load_saved_state()
+            if not state:
+                state = init_state()
+
+            st = state.get("screen_time", {})
+            ec = state.get("eye_care", {})
+
+            sot_str = format_sot(st.get("sot_seconds", 0))
+            phase = ec.get("phase", "work")
+            paused = ec.get("paused", False)
+            rem_str = format_timer(ec.get("remaining_seconds", 0))
+            goal_h = st.get("goal_hours", DEFAULT_GOAL_HOURS)
+            goal_reached = st.get("goal_reached", False)
+            cycles = ec.get("cycle_count", 0)
+
+            # Icon & status representation
+            if paused:
+                eye_icon = "󰏤" # pause
+                cls = "paused"
+                timer_display = f"{eye_icon} {rem_str}"
+            elif phase == "break":
+                eye_icon = "󰈉" # break / rest
+                cls = "break"
+                timer_display = f"{eye_icon} {rem_str}"
+            else:
+                eye_icon = "󰈈" # eye work
+                cls = "work"
+                timer_display = f"{eye_icon} {rem_str}"
+
+            if goal_reached:
+                cls += " goal-reached"
+
+            text = f"󰔚 {sot_str}  {timer_display}"
+
+            # Tooltip construction
+            top_apps = sorted(st.get("apps", {}).items(), key=lambda x: x[1], reverse=True)[:5]
+            apps_text = ""
+            for app_name, sec in top_apps:
+                apps_text += f"\n  • {app_name}: {format_sot(sec)}"
+            if not apps_text:
+                apps_text = "\n  • (Tracking in progress)"
+
+            status_lbl = "Paused" if paused else ("Break Time!" if phase == "break" else "Focus Session")
+
+            tooltip = (
+                f"🌿 Screen Care & Wellbeing\n"
+                f"───────────────────────────────\n"
+                f"⏱  Screen-On Time : {sot_str} (Goal: {goal_h}h)\n"
+                f"👀  Eye Care Timer : {rem_str} ({status_lbl})\n"
+                f"🔄  Cycles Today   : #{cycles} completed\n"
+                f"───────────────────────────────\n"
+                f"📱  Top Apps Today:{apps_text}\n"
+                f"───────────────────────────────\n"
+                f"Left Click  : Pause / Resume Eye Timer\n"
+                f"Right Click : Quick Action Menu (Wofi)\n"
+                f"Middle Click: Skip to Next Phase"
+            )
+
+            out = {
+                "text": text,
+                "tooltip": tooltip,
+                "class": cls
+            }
+            sys.stdout.write(json.dumps(out) + "\n")
+            sys.stdout.flush()
+
+        except Exception as e:
+            sys.stdout.write(json.dumps({"text": "🌿 Care", "tooltip": str(e), "class": "error"}) + "\n")
+            sys.stdout.flush()
+
+        time.sleep(1)
+
+# ── Interactive Menu (Wofi) ───────────────────────────────────────────────────
+
+def run_menu():
+    menu_items = [
+        "⏸  Toggle Pause / Resume",
+        "☕  Take Break Now (15 min)",
+        "⏰  Snooze 5 Minutes",
+        "🔄  Reset Current Timer",
+        "⏭  Skip to Next Phase",
+        "─── Presets ──────────────────────────",
+        "⏱  Preset: 20-20-20 Rule (20m work / 20s break)",
+        "⏱  Preset: Standard Focus (45m work / 15m break)",
+        "⏱  Preset: Deep Sprint (60m work / 10m break)",
+        "─── Goals ────────────────────────────",
+        "🎯  Daily Goal: 4 Hours",
+        "🎯  Daily Goal: 6 Hours (Default)",
+        "🎯  Daily Goal: 8 Hours",
+        "─── Details ──────────────────────────",
+        "📊  View Today's App Breakdown"
+    ]
+
+    p = subprocess.Popen(
+        ["wofi", "--drun-print_desktop_file=false", "--show", "dmenu", "--prompt", "🌿 Screen Care & Wellbeing"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
+    selected, _ = p.communicate("\n".join(menu_items))
+    sel = (selected or "").strip()
+
+    if not sel:
+        return
+
+    if "Toggle Pause" in sel:
+        send_client_command({"command": "toggle"})
+    elif "Take Break Now" in sel:
+        send_client_command({"command": "skip"}) # if work, skips to break
+    elif "Snooze" in sel:
+        send_client_command({"command": "snooze"})
+    elif "Reset" in sel:
+        send_client_command({"command": "reset"})
+    elif "Skip to Next" in sel:
+        send_client_command({"command": "skip"})
+    elif "20-20-20" in sel:
+        send_client_command({"command": "set_work", "minutes": 20})
+        send_client_command({"command": "set_break", "minutes": 1})
+        send_client_command({"command": "reset"})
+        send_notification("🌿 Eye Preset Applied", "20-20-20 Rule active: 20m work / 1m rest.")
+    elif "Standard Focus" in sel:
+        send_client_command({"command": "set_work", "minutes": 45})
+        send_client_command({"command": "set_break", "minutes": 15})
+        send_client_command({"command": "reset"})
+        send_notification("🌿 Eye Preset Applied", "Standard Focus active: 45m work / 15m break.")
+    elif "Deep Sprint" in sel:
+        send_client_command({"command": "set_work", "minutes": 60})
+        send_client_command({"command": "set_break", "minutes": 10})
+        send_client_command({"command": "reset"})
+        send_notification("🌿 Eye Preset Applied", "Deep Sprint active: 60m work / 10m break.")
+    elif "4 Hours" in sel:
+        send_client_command({"command": "set_goal", "hours": 4})
+        send_notification("🎯 Goal Updated", "Daily Screen Time goal set to 4 hours.")
+    elif "6 Hours" in sel:
+        send_client_command({"command": "set_goal", "hours": 6})
+        send_notification("🎯 Goal Updated", "Daily Screen Time goal set to 6 hours.")
+    elif "8 Hours" in sel:
+        send_client_command({"command": "set_goal", "hours": 8})
+        send_notification("🎯 Goal Updated", "Daily Screen Time goal set to 8 hours.")
+    elif "App Breakdown" in sel:
+        state = load_saved_state()
+        st = state.get("screen_time", {})
+        top_apps = sorted(st.get("apps", {}).items(), key=lambda x: x[1], reverse=True)
+        lines = [f"{app}: {format_sot(sec)}" for app, sec in top_apps]
+        body = "\n".join(lines) if lines else "No app usage recorded yet."
+        send_notification("📊 Today's Screen Time Usage", body)
+
+# ── Main Entrypoint ───────────────────────────────────────────────────────────
+
+def main():
+    arg = sys.argv[1] if len(sys.argv) > 1 else "status"
+
+    if arg == "daemon":
+        run_daemon()
+    elif arg == "stream":
+        run_stream()
+    elif arg == "menu":
+        run_menu()
+    elif arg in ["toggle", "pause", "resume", "reset", "skip", "snooze"]:
+        res = send_client_command({"command": arg})
+        if res:
+            print(json.dumps(res))
+    elif arg == "status":
+        res = send_client_command({"command": "status"})
+        if res:
+            print(json.dumps(res, indent=2))
+        else:
+            print(json.dumps(load_saved_state(), indent=2))
+    elif arg == "set_work" and len(sys.argv) > 2:
+        print(send_client_command({"command": "set_work", "minutes": int(sys.argv[2])}))
+    elif arg == "set_break" and len(sys.argv) > 2:
+        print(send_client_command({"command": "set_break", "minutes": int(sys.argv[2])}))
+    elif arg == "set_goal" and len(sys.argv) > 2:
+        print(send_client_command({"command": "set_goal", "hours": int(sys.argv[2])}))
+    else:
+        print("Usage: sway-wellbeing [daemon|stream|menu|toggle|reset|skip|snooze|status]")
+
+if __name__ == "__main__":
+    main()

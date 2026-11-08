@@ -1,0 +1,106 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+    "modules-left": ["sway/workspaces", "sway/mode", "sway/window"],
+    "modules-center": ["clock", "custom/wellbeing"],
+    "modules-right": ["pulseaudio", "custom/brightness", "custom/nightlight", "network", "cpu", "memory"],
+    "sway/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "format": "{name}"
+    },
+    "sway/window": {
+        "format": "{app_id}",
+        "max-length": 18,
+        "separate-outputs": true,
+        "rewrite": {
+            "^$": "",
+            ".*[Mm]usic.*youtube.*": "󰝚 YT Music",
+            ".*youtube.*": "󰗃 YouTube",
+            ".*pavucontrol.*": "󰕾 Audio",
+            "^foot$": "󰞷 Terminal",
+            "^tmux$": "󰞷 Tmux",
+            "^btop$": "󰓅 System",
+            "^yazi$": "󰉋 Yazi",
+            "^floating-terminal$": "󰞷 Terminal",
+            "^thunar$": "󰉋 Files",
+            "^chromium$": " Chromium",
+            "^brave.*": "🦁 Brave",
+            "^viewnior$": "󰋩 Image",
+            "^xreader$": "󰈦 Documents",
+            "^mpv$": "󰕼 Video",
+            "^xarchiver$": "󰛫 Archive",
+            ".*satty.*": "󰹑 Screenshot",
+            "^wofi$": "󰍉 Menu",
+            "^gedit$": "󰏫 Editor",
+            "^mousepad$": "󰏫 Editor",
+            "^code.*": "󰨞 Code"
+        }
+    },
+    "cpu": {
+        "format": "󰻠 {usage}%",
+        "interval": 2
+    },
+    "memory": {
+        "format": "󰍛 {used:0.1f}G/{total:0.1f}G",
+        "interval": 2
+    },
+    "network": {
+        "format-wifi": "󰤨 {essid}",
+        "format-ethernet": "󰈀 Ethernet",
+        "format-linked": "󰈀 Ethernet (No IP)",
+        "format-disconnected": "󰤮 Offline",
+        "tooltip-format-wifi": "󰤨 Wi-Fi: {essid} ({signalStrength}%)\nIP: {ipaddr}\nInterface: {ifname}\nClick to manage connections",
+        "tooltip-format-ethernet": "󰈀 Wired: {ifname}\nIP: {ipaddr}/{cidr}\nGateway: {gwaddr}\nClick to manage connections",
+        "tooltip-format-disconnected": "󰤮 Disconnected\nClick to connect to Wi-Fi",
+        "interval": 3,
+        "on-click": "foot --app-id=floating-terminal -e nmtui"
+    },
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 Muted",
+        "format-icons": {
+            "default": ["󰕿", "󰖀", "󰕾"]
+        },
+        "on-click": "pamixer -t",
+        "on-click-right": "pavucontrol"
+    },
+    "custom/wellbeing": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.local/bin/sway-wellbeing stream",
+        "on-click": "~/.local/bin/sway-wellbeing toggle",
+        "on-click-right": "~/.local/bin/sway-wellbeing menu",
+        "on-click-middle": "~/.local/bin/sway-wellbeing skip",
+        "tooltip": true
+    },
+    "custom/brightness": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.local/bin/brightness-ctrl status",
+        "interval": 3600,
+        "signal": 9,
+        "on-click": "~/.local/bin/brightness-ctrl cycle",
+        "on-click-right": "~/.local/bin/brightness-ctrl toggle",
+        "on-scroll-up": "~/.local/bin/brightness-ctrl inc",
+        "on-scroll-down": "~/.local/bin/brightness-ctrl dec",
+        "tooltip": true
+    },
+    "custom/nightlight": {
+        "format": "{}",
+        "return-type": "json",
+        "exec": "~/.local/bin/nightlight status",
+        "interval": 3600,
+        "signal": 8,
+        "on-click": "~/.local/bin/nightlight toggle",
+        "on-click-right": "~/.local/bin/nightlight cycle",
+        "on-scroll-up": "~/.local/bin/nightlight inc",
+        "on-scroll-down": "~/.local/bin/nightlight dec",
+        "tooltip": true
+    },
+    "clock": {
+        "format": "󰃭 {:%Y-%m-%d  󰥔 %I:%M %p}",
+        "interval": 60
+    }
+}

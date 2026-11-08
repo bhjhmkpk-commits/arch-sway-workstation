@@ -1,0 +1,148 @@
+# ==============================================================================
+# 🚀 bohar Workstation - Sway Window Manager Configuration
+# Synced with Omarchy keybindings & optimized for Intel Core i5-6400 + HD 530
+# ==============================================================================
+
+set $mod Mod4
+set $term foot
+set $menu wofi --show drun
+
+# Typography
+font pango:JetBrainsMono Nerd Font 12
+
+# Hardware & Display
+output * bg #23382f solid_color
+output HDMI-A-1 mode 1920x1080@60Hz
+
+# Gaps & Borders
+default_border pixel 2
+default_floating_border pixel 2
+gaps inner 6
+gaps outer 4
+
+# Colors (Everforest / Forest Sage - Eye Care)
+client.focused          #a7c080 #23382f #e6e2d8 #a7c080 #a7c080
+client.focused_inactive #36453b #23382f #9aa59a #36453b #36453b
+client.unfocused        #2a362f #1e2a24 #889488 #2a362f #2a362f
+client.urgent           #e67e80 #23382f #e67e80 #e67e80 #e67e80
+
+# ── 1. Core Actions & Launchers (Omarchy Parity) ──────────────────────────────
+bindsym $mod+Return exec $term
+bindsym $mod+Mod1+Return exec $term --app-id=tmux -e tmux new -A -s Work
+bindsym $mod+w kill
+bindsym $mod+t floating toggle
+bindsym Mod1+Tab focus right
+bindsym Mod1+Shift+Tab focus left
+bindsym $mod+Ctrl+l exec swaylock
+bindsym $mod+d exec $menu
+bindsym $mod+space exec $menu
+bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+space focus mode_toggle
+bindsym $mod+Shift+v exec ~/.local/bin/cliphist-menu
+bindsym $mod+Escape exec $term --app-id=btop -e btop
+bindsym $mod+Shift+r reload
+bindsym $mod+Backspace exec swaylock
+bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Sway?" -B "Yes, exit" "swaymsg exit"
+
+# ── 2. Applications & Web Browsers ────────────────────────────────────────────
+bindsym $mod+b exec chromium
+bindsym $mod+Shift+b exec brave-origin
+bindsym $mod+Shift+c exec chromium
+bindsym $mod+Shift+f exec thunar
+bindsym $mod+Mod1+f exec $term --app-id=yazi -e yazi
+bindsym $mod+Shift+a exec ~/.local/bin/webapp gui
+bindsym $mod+Shift+y exec chromium --app="https://youtube.com" --name="webapp-youtube" --class="WebApp-youtube"
+bindsym $mod+Shift+m exec chromium --app="https://music.youtube.com" --name="webapp-youtube-music" --class="WebApp-youtube-music"
+
+# ── 3. Audio & Media Routing (playerctl & pamixer) ─────────────────────────────
+bindsym $mod+Mod1+p exec playerctl play-pause
+bindsym $mod+bracketright exec playerctl next
+bindsym $mod+bracketleft exec playerctl previous
+bindsym $mod+n exec ~/.local/bin/nightlight toggle
+bindsym $mod+Shift+n exec ~/.local/bin/nightlight cycle
+bindsym $mod+Mod1+e exec ~/.local/bin/sway-wellbeing menu
+bindsym $mod+Ctrl+e exec ~/.local/bin/sway-wellbeing toggle
+
+bindsym XF86AudioRaiseVolume exec pamixer -i 5
+bindsym XF86AudioLowerVolume exec pamixer -d 5
+bindsym XF86AudioMute exec pamixer -t
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPrev exec playerctl previous
+
+# ── 4. Screen Brightness ──────────────────────────────────────────────────────
+bindsym XF86MonBrightnessUp exec ~/.local/bin/brightness-ctrl inc
+bindsym XF86MonBrightnessDown exec ~/.local/bin/brightness-ctrl dec
+
+# ── 5. Screenshots (Grim & Slurp & Satty) ───────────────────────────────────
+bindsym Print exec ~/.local/bin/screenshot full
+bindsym Shift+Print exec ~/.local/bin/screenshot area
+
+# ── 6. Window Navigation (Vim & Arrows) ────────────────────────────────────────
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# ── 7. Layout Splits ──────────────────────────────────────────────────────────
+bindsym $mod+v splitv
+bindsym $mod+backslash splith
+bindsym $mod+s layout stacking
+bindsym $mod+Shift+w layout tabbed
+bindsym $mod+e layout toggle split
+
+# ── 8. Workspaces (1 - 10) ───────────────────────────────────────────────────
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+bindsym $mod+0 workspace number 10
+
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+bindsym $mod+Shift+0 move container to workspace number 10
+
+# ── 9. Status Bar & Autostart Daemons ─────────────────────────────────────────
+bar {
+    swaybar_command waybar
+}
+
+# Idle inhibitor: Prevent screen sleep when any window is fullscreen
+for_window [all] inhibit_idle fullscreen
+
+# Floating dialogs and utility popups
+for_window [app_id="floating-terminal"] floating enable, resize set 750 480
+for_window [app_id="pavucontrol"] floating enable, resize set 800 500
+for_window [app_id="viewnior"] floating enable
+for_window [app_id="xarchiver"] floating enable
+for_window [app_id=".*satty.*"] floating enable
+
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway SWAYSOCK
+exec_always mako
+exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+exec /usr/lib/xdg-desktop-portal-wlr

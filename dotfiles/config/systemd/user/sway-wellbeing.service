@@ -1,0 +1,13 @@
+[Unit]
+Description=Arch Sway Digital Wellbeing & Eye Care Daemon
+After=sway-session.target graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/sway-wellbeing daemon
+Restart=always
+RestartSec=2
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin
+
+[Install]
+WantedBy=default.target

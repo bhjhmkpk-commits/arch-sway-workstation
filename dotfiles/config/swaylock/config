@@ -1,0 +1,22 @@
+daemonize
+ignore-empty-password
+color=23382f
+font=JetBrainsMono Nerd Font
+font-size=16
+indicator-radius=70
+indicator-thickness=7
+inside-color=1e2a24
+inside-clear-color=283b32
+inside-ver-color=283b32
+inside-wrong-color=3d2a2a
+ring-color=36453b
+ring-clear-color=a7c080
+ring-ver-color=83c092
+ring-wrong-color=e67e80
+key-hl-color=a7c080
+bs-hl-color=e67e80
+text-color=e6e2d8
+text-clear-color=e6e2d8
+text-ver-color=83c092
+text-wrong-color=e67e80
+line-uses-inside

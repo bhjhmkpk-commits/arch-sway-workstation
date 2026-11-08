@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GitHub
+Comment=GitHub Web Application
+Exec=chromium --app="https://github.com" --name="webapp-github" --class="WebApp-github"
+Icon=webapp-github
+Terminal=false
+StartupNotify=true
+Categories=Network;WebApplication;
+StartupWMClass=chrome-github

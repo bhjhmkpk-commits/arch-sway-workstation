@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ☀️ Arch Sway Workstation - Fast Coalescing Display Brightness Controller
+# Instant Waybar visual updates + debounced DDC/CI hardware I2C execution
+# ==============================================================================
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/brightness"
+CACHE_FILE="$CONFIG_DIR/val"
+TARGET_FILE="$CONFIG_DIR/target"
+BUS_FILE="$CONFIG_DIR/bus"
+PID_FILE="$CONFIG_DIR/worker.pid"
+
+mkdir -p "$CONFIG_DIR"
+
+DEFAULT_BRIGHTNESS=45
+MIN_BRIGHTNESS=5
+MAX_BRIGHTNESS=100
+STEP=5
+
+get_bus() {
+    if [[ -f "$BUS_FILE" ]]; then
+        cat "$BUS_FILE"
+        return
+    fi
+    # Fast detect bus
+    local detected
+    detected=$(ddcutil --skip-ddc-checks detect --brief 2>/dev/null | awk '/I2C bus:/ { sub(/^.*\/i2c-/, "", $NF); print $NF; exit }')
+    if [[ -n "$detected" ]]; then
+        echo "$detected" > "$BUS_FILE"
+        echo "$detected"
+    else
+        echo "1" > "$BUS_FILE"
+        echo "1"
+    fi
+}
+
+get_brightness() {
+    if [[ -f "$CACHE_FILE" ]]; then
+        local val
+        val=$(<"$CACHE_FILE")
+        if [[ "$val" =~ ^[0-9]+$ ]] && (( val >= MIN_BRIGHTNESS && val <= MAX_BRIGHTNESS )); then
+            echo "$val"
+            return
+        fi
+    fi
+    local bus
+    bus=$(get_bus)
+    local probed
+    probed=$(ddcutil --bus "$bus" getvcp 10 --brief 2>/dev/null | awk '{print $4}')
+    if [[ "$probed" =~ ^[0-9]+$ ]]; then
+        echo "$probed" > "$CACHE_FILE"
+        echo "$probed"
+    else
+        echo "$DEFAULT_BRIGHTNESS" > "$CACHE_FILE"
+        echo "$DEFAULT_BRIGHTNESS"
+    fi
+}
+
+signal_waybar() {
+    pkill -RTMIN+9 waybar >/dev/null 2>&1 || true
+    pkill -SIGRTMIN+9 waybar >/dev/null 2>&1 || true
+}
+
+apply_hardware_brightness() {
+    local target="$1"
+    local bus
+    bus=$(get_bus)
+    echo "$target" > "$TARGET_FILE"
+
+    # If background worker is already running, it will automatically pick up the new target
+    if [[ -f "$PID_FILE" ]] && kill -0 "$(<"$PID_FILE")" 2>/dev/null; then
+        return
+    fi
+
+    (
+        echo $$ > "$PID_FILE"
+        # 40ms debounce: allows rapid mouse scrolls to coalesce into a single hardware command
+        python3 -c 'import time; time.sleep(0.04)' 2>/dev/null || true
+
+        last_applied=""
+        while true; do
+            curr=$(<"$TARGET_FILE")
+            if [[ "$curr" == "$last_applied" ]]; then
+                break
+            fi
+            last_applied="$curr"
+            ddcutil --bus "$bus" setvcp 10 "$last_applied" --noverify >/dev/null 2>&1
+        done
+        rm -f "$PID_FILE"
+    ) & disown
+}
+
+get_icon() {
+    local val="$1"
+    if (( val >= 80 )); then
+        echo "󰃠"
+    elif (( val >= 50 )); then
+        echo "󰃟"
+    elif (( val >= 25 )); then
+        echo "󰃞"
+    else
+        echo "󰃝"
+    fi
+}
+
+case "${1:-status}" in
+    inc|up)
+        current=$(get_brightness)
+        new_val=$(( current + STEP ))
+        if (( new_val > MAX_BRIGHTNESS )); then new_val=$MAX_BRIGHTNESS; fi
+        echo "$new_val" > "$CACHE_FILE"
+        signal_waybar
+        apply_hardware_brightness "$new_val"
+        ;;
+    dec|down)
+        current=$(get_brightness)
+        new_val=$(( current - STEP ))
+        if (( new_val < MIN_BRIGHTNESS )); then new_val=$MIN_BRIGHTNESS; fi
+        echo "$new_val" > "$CACHE_FILE"
+        signal_waybar
+        apply_hardware_brightness "$new_val"
+        ;;
+    set)
+        new_val="${2:-$DEFAULT_BRIGHTNESS}"
+        if (( new_val > MAX_BRIGHTNESS )); then new_val=$MAX_BRIGHTNESS; fi
+        if (( new_val < MIN_BRIGHTNESS )); then new_val=$MIN_BRIGHTNESS; fi
+        echo "$new_val" > "$CACHE_FILE"
+        signal_waybar
+        apply_hardware_brightness "$new_val"
+        ;;
+    cycle)
+        current=$(get_brightness)
+        case "$current" in
+            25) next=50 ;;
+            50) next=75 ;;
+            75) next=100 ;;
+            100) next=25 ;;
+            *)
+                if (( current < 50 )); then next=50; else next=100; fi
+                ;;
+        esac
+        echo "$next" > "$CACHE_FILE"
+        signal_waybar
+        apply_hardware_brightness "$next"
+        ;;
+    toggle)
+        current=$(get_brightness)
+        if (( current <= 25 )); then
+            next=60
+        else
+            next=20
+        fi
+        echo "$next" > "$CACHE_FILE"
+        signal_waybar
+        apply_hardware_brightness "$next"
+        ;;
+    status)
+        val=$(get_brightness)
+        icon=$(get_icon "$val")
+        printf '{"text":"%s %s%%","tooltip":"Display Brightness: %s%%\\n\\n• Scroll: Smooth Adjust (+/- %s%%)\\n• Left Click: Cycle Presets (25%% - 100%%)\\n• Right Click: Toggle Dim / Bright","percentage":%s,"class":"brightness"}\n' "$icon" "$val" "$val" "$STEP" "$val"
+        ;;
+    *)
+        echo "Usage: $0 {status|inc|dec|set <val>|cycle|toggle}"
+        exit 1
+        ;;
+esac
