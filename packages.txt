@@ -12,6 +12,11 @@ xdg-desktop-portal-gtk
 xorg-xwayland
 polkit-gnome
 
+# Core Graphics & Driver Stack
+mesa
+base-devel
+pciutils
+
 # Typography & Fonts
 ttf-jetbrains-mono-nerd
 noto-fonts
@@ -50,6 +55,7 @@ cliphist
 brightnessctl
 wlsunset
 zenity
+networkmanager
 
 # Web Browser & PWA Engine
 chromium

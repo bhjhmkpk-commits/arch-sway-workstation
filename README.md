@@ -53,7 +53,7 @@ Log in with your user account, then run:
 sudo pacman -S --needed --noconfirm git
 
 # 2. Clone this repository
-git clone https://github.com/<your-username>/arch-sway-workstation.git
+git clone https://github.com/bhjhmkpk-commits/arch-sway-workstation.git
 cd arch-sway-workstation
 
 # 3. Run the installer
