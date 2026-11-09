@@ -71,3 +71,10 @@ neovim
 git
 curl
 wget
+
+# System Optimization, Maintenance & Hardware Control
+ddcutil
+pacman-contrib
+ffmpegthumbnailer
+xdg-user-dirs
+github-cli

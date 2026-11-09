@@ -58,11 +58,18 @@ fi
 echo -e "\n${BLUE}🔑 Step 3/7: Configuring hardware permissions & user groups...${NC}"
 # video: brightnessctl without root
 # input: keyboard/mouse/touchpad events
-sudo usermod -aG video,input "$USER" 2>/dev/null || true
-echo -e "${GREEN}✓ Added $USER to 'video' and 'input' groups.${NC}"
+# i2c: ddcutil hardware monitor brightness without root
+sudo usermod -aG video,input,i2c "$USER" 2>/dev/null || true
+echo -e "${GREEN}✓ Added $USER to 'video', 'input', and 'i2c' groups.${NC}"
 
-# Enable NetworkManager service
+# Enable DDC/CI monitor kernel module and system maintenance timers
+echo "i2c-dev" | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null || true
+sudo modprobe i2c-dev 2>/dev/null || true
+sudo systemctl enable --now fstrim.timer paccache.timer 2>/dev/null || true
+
+# Enable NetworkManager and disable redundant networkd
 sudo systemctl enable --now NetworkManager 2>/dev/null || true
+sudo systemctl disable --now systemd-networkd.socket systemd-networkd.service 2>/dev/null || true
 
 # 6. Backup existing configs if present
 BACKUP_DIR="$HOME/.config/arch_sway_backup_$(date +%Y%m%d_%H%M%S)"
@@ -105,14 +112,9 @@ cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/512x512/a
 cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/256x256/apps/"
 cp -a "$SCRIPT_DIR/dotfiles/applications/"* "$HOME/.local/share/applications/"
 
-# Deploy shell profile for instant tty1 auto-start
-if [ ! -f "$HOME/.bashrc" ] || ! grep -q "PATH.*\.local/bin" "$HOME/.bashrc"; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-fi
-
-if [ ! -f "$HOME/.bash_profile" ] || ! grep -q "exec sway" "$HOME/.bash_profile"; then
-    cat "$SCRIPT_DIR/dotfiles/shell/bash_profile" >> "$HOME/.bash_profile"
-fi
+# Deploy shell profile and modern productivity environment
+cp -a "$SCRIPT_DIR/dotfiles/shell/bashrc" "$HOME/.bashrc"
+cp -a "$SCRIPT_DIR/dotfiles/shell/bash_profile" "$HOME/.bash_profile"
 
 # Rebuild desktop & icon caches
 gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
@@ -125,7 +127,7 @@ systemctl --user enable cliphist.service swayidle.service sway-wellbeing.service
 
 # 10. Optional AUR Package: Brave Browser
 echo -e "\n${YELLOW}🌐 Step 7/7: Optional Applications (Brave Browser)${NC}"
-read -rp "Would you like to install Brave Browser (brave-origin-bin via AUR)? (y/N): " INSTALL_BRAVE
+read -rp "Would you like to install Brave Browser via AUR? (y/N): " INSTALL_BRAVE
 if [[ "$INSTALL_BRAVE" =~ ^[Yy]$ ]]; then
     if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
         echo -e "${BLUE}Installing yay-bin AUR helper...${NC}"
@@ -134,10 +136,13 @@ if [[ "$INSTALL_BRAVE" =~ ^[Yy]$ ]]; then
         (cd "$TEMP_AUR/yay-bin" && makepkg -si --noconfirm)
         rm -rf "$TEMP_AUR"
     fi
-    if command -v yay &>/dev/null; then
-        yay -S --needed --noconfirm brave-origin-bin
-    elif command -v paru &>/dev/null; then
-        paru -S --needed --noconfirm brave-origin-bin
+    AUR_CMD="yay"
+    command -v paru &>/dev/null && AUR_CMD="paru"
+    
+    echo -e "${BLUE}Attempting to install brave-origin-bin (minimalist edition)...${NC}"
+    if ! $AUR_CMD -S --needed --noconfirm brave-origin-bin; then
+        echo -e "${YELLOW}Notice: brave-origin-bin upstream download failed. Falling back to brave-bin...${NC}"
+        $AUR_CMD -S --needed --noconfirm brave-bin
     fi
     echo -e "${GREEN}✓ Brave Browser installed successfully!${NC}"
 else

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🚀 Arch Sway Workstation - System Optimization & Essentials Script
+# Configures SSD trim, pacman maintenance, DDC/CI brightness & removes daemon redundancy
+# ==============================================================================
+
+set -e
+
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run with sudo: sudo sys-optimize"
+    exit 1
+fi
+
+CURRENT_USER="${SUDO_USER:-$USER}"
+
+echo "==> 1. Installing essential utility packages..."
+pacman -S --needed --noconfirm ddcutil pacman-contrib ffmpegthumbnailer xdg-user-dirs github-cli
+
+echo "==> 2. Setting up DDC/CI hardware monitor brightness (i2c-dev)..."
+echo "i2c-dev" > /etc/modules-load.d/i2c-dev.conf
+modprobe i2c-dev || true
+usermod -aG i2c "$CURRENT_USER" || true
+
+echo "==> 3. Enabling weekly SSD Trim & automatic Pacman cache cleaner timers..."
+systemctl enable --now fstrim.timer
+systemctl enable --now paccache.timer
+
+echo "==> 4. Removing duplicate network daemon (systemd-networkd)..."
+systemctl disable --now systemd-networkd.socket systemd-networkd.service 2>/dev/null || true
+
+echo "==> 5. Capping systemd journal size to 50M to prevent disk creep..."
+mkdir -p /etc/systemd/journald.conf.d
+cat << 'EOF' > /etc/systemd/journald.conf.d/00-journal-size.conf
+[Journal]
+SystemMaxUse=50M
+RuntimeMaxUse=20M
+EOF
+systemctl restart systemd-journald
+
+echo "==> 6. Cleaning pacman package cache (retaining last 2 versions)..."
+paccache -rk2 || true
+
+echo -e "\n\033[0;32m✓ System optimization complete! Resource usage minimized and essentials in place.\033[0m"

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🦁 Brave Browser Launcher Wrapper (Wayland & Hardware Accelerated)
+# ==============================================================================
+
+# Search for any installed flavor of Brave
+for bin in /usr/bin/brave-origin /usr/bin/brave-browser /usr/bin/brave; do
+    if [ -x "$bin" ]; then
+        exec "$bin" \
+            --ozone-platform-hint=auto \
+            --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
+            --enable-gpu-rasterization \
+            --enable-zero-copy \
+            "$@"
+    fi
+done
+
+# If none installed, notify the user
+notify-send -u normal -i dialog-information "Brave Browser" "Brave is not installed yet.\nRun 'yay -S brave-origin-bin' in your terminal."
