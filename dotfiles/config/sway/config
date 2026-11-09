@@ -128,9 +128,8 @@ bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+Shift+0 move container to workspace number 10
 
 # ── 9. Status Bar & Autostart Daemons ─────────────────────────────────────────
-bar {
-    swaybar_command waybar
-}
+# Status Bar (Independent Wayland Layer-Shell)
+exec_always pkill -x waybar; waybar
 
 # Idle inhibitor: Prevent screen sleep when any window is fullscreen
 for_window [all] inhibit_idle fullscreen
