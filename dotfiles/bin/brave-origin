@@ -8,6 +8,7 @@ for bin in /usr/bin/brave-origin /usr/bin/brave-origin-nightly /usr/bin/brave-or
     if [ -x "$bin" ]; then
         exec "$bin" \
             --ozone-platform-hint=auto \
+            --force-dark-mode \
             --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
             --enable-gpu-rasterization \
             --enable-zero-copy \

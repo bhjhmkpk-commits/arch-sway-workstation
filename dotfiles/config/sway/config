@@ -46,7 +46,7 @@ bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Sway?" -B "Yes, exit" "swa
 
 # ── 2. Applications & Web Browsers ────────────────────────────────────────────
 bindsym $mod+b exec chromium
-bindsym $mod+Shift+b exec brave-origin
+bindsym $mod+Shift+b exec ~/.local/bin/brave-origin
 bindsym $mod+Shift+c exec chromium
 bindsym $mod+Shift+f exec thunar
 bindsym $mod+Mod1+f exec $term --app-id=yazi -e yazi
@@ -144,5 +144,6 @@ for_window [app_id=".*satty.*"] floating enable
 
 exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway SWAYSOCK
 exec_always mako
-exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+exec lxpolkit
 exec /usr/lib/xdg-desktop-portal-wlr
+exec ~/.local/bin/nightlight on

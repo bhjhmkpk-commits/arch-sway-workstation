@@ -102,6 +102,17 @@ create_webapp() {
         fetch_icon "$url" "$icon_path"
     fi
 
+    # Create Waybar PWA window icon alias
+    local domain
+    domain=$(printf '%s' "$url" | sed -E 's|https?://([^/]+).*|\1|')
+    ln -sf "$icon_path" "$ICONS_DIR/chrome-${domain}__-Default.png" 2>/dev/null || true
+    if [[ "$ICONS_DIR" =~ 256x256 ]]; then
+        local dir_512="${ICONS_DIR/256x256/512x512}"
+        if [[ -d "$dir_512" ]]; then
+            ln -sf "$dir_512/webapp-$id.png" "$dir_512/chrome-${domain}__-Default.png" 2>/dev/null || true
+        fi
+    fi
+
     gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
 
     # Generate .desktop file

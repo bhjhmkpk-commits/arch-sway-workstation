@@ -53,8 +53,17 @@ stop_wlsunset() {
 }
 
 signal_waybar() {
-    pkill -RTMIN+8 waybar >/dev/null 2>&1 || true
-    pkill -SIGRTMIN+8 waybar >/dev/null 2>&1 || true
+    pkill -RTMIN+8 -u "$USER" waybar >/dev/null 2>&1 || true
+}
+
+send_notification() {
+    local temp
+    temp=$(get_temp)
+    if is_running; then
+        notify-send -t 1000 -h string:x-canonical-private-synchronous:nightlight -i display-symbolic "Night Light" "Active (${temp}K)" >/dev/null 2>&1 || true
+    else
+        notify-send -t 1000 -h string:x-canonical-private-synchronous:nightlight -i display-symbolic "Night Light" "Disabled" >/dev/null 2>&1 || true
+    fi
 }
 
 case "${1:-status}" in
@@ -65,14 +74,17 @@ case "${1:-status}" in
             start_wlsunset
         fi
         signal_waybar
+        send_notification
         ;;
     on)
         start_wlsunset
         signal_waybar
+        send_notification
         ;;
     off)
         stop_wlsunset
         signal_waybar
+        send_notification
         ;;
     inc|up)
         current=$(get_temp)
@@ -81,6 +93,7 @@ case "${1:-status}" in
             start_wlsunset
         fi
         signal_waybar
+        send_notification
         ;;
     dec|down)
         current=$(get_temp)
@@ -89,6 +102,7 @@ case "${1:-status}" in
             start_wlsunset
         fi
         signal_waybar
+        send_notification
         ;;
     cycle)
         current=$(get_temp)
@@ -106,6 +120,7 @@ case "${1:-status}" in
             start_wlsunset
         fi
         signal_waybar
+        send_notification
         ;;
     status)
         temp=$(get_temp)

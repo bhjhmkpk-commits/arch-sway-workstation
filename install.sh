@@ -106,6 +106,8 @@ cp -r "$SCRIPT_DIR/dotfiles/config/"* "$HOME/.config/"
 # Deploy custom scripts and set execution rights
 cp -a "$SCRIPT_DIR/dotfiles/bin/"* "$HOME/.local/bin/"
 chmod +x "$HOME/.local/bin/"*
+sudo ln -sf "$HOME/.local/bin/sys-optimize" "/usr/local/bin/sys-optimize"
+sudo ln -sf "$HOME/.local/bin/brave-origin" "/usr/local/bin/brave-origin"
 
 # Deploy 512x512 web application icons & desktop entries
 cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/512x512/apps/"
@@ -149,20 +151,19 @@ else
     echo -e "Skipping Brave. Chromium is pre-installed as the default web engine."
 fi
 
-# 11. Optional TTY1 Autologin Setup
-echo -e "\n${YELLOW}❓ TTY1 Instant Autologin Setup${NC}"
-read -rp "Enable automatic login on tty1 for user '$USER'? (y/N): " AUTOLOGIN_CHOICE
-if [[ "$AUTOLOGIN_CHOICE" =~ ^[Yy]$ ]]; then
-    sudo mkdir -p /etc/systemd/system/getty@tty1.service.d/
-    sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf > /dev/null <<EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty -o "-p -f -- \\u" --noclear --autologin $USER %I \$TERM
+# 11. Minimal TUI Login Manager (greetd + tuigreet)
+echo -e "\n${BLUE}🔒 Step 7/7: Configuring minimal tuigreet login manager...${NC}"
+sudo mkdir -p /etc/greetd
+sudo tee /etc/greetd/config.toml > /dev/null <<EOF
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --time --remember --remember-user-session --asterisks --greeting 'Arch Sway Workstation' --cmd sway"
+user = "greeter"
 EOF
-    echo -e "${GREEN}✓ TTY1 autologin configured for $USER!${NC}"
-else
-    echo -e "Skipping autologin. You can log in manually on tty1 to start Sway."
-fi
+sudo systemctl enable greetd.service
+echo -e "${GREEN}✓ Minimal tuigreet login manager configured and enabled!${NC}"
 
 echo -e "\n${GREEN}=================================================================${NC}"
 echo -e "${GREEN}  🎉 Arch Sway Workstation Installation Complete!               ${NC}"

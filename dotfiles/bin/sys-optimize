@@ -40,4 +40,24 @@ systemctl restart systemd-journald
 echo "==> 6. Cleaning pacman package cache (retaining last 2 versions)..."
 paccache -rk2 || true
 
+echo "==> 7. Configuring high-efficiency ZRAM kernel tuning (swappiness=180)..."
+cat << 'EOF' > /etc/sysctl.d/99-zram.conf
+# Arch Sway Workstation - ZRAM Kernel Tuning
+vm.swappiness = 180
+vm.watermark_boost_factor = 0
+vm.watermark_scale_factor = 125
+vm.page-cluster = 0
+EOF
+sysctl -p /etc/sysctl.d/99-zram.conf || true
+
+echo "==> 8. Setting CPU power profile to Maximum Performance (governor + EPP)..."
+cat << 'EOF' > /etc/tmpfiles.d/cpu-performance.conf
+w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performance
+w /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference - - - - performance
+w /sys/devices/system/cpu/cpu*/power/energy_perf_bias - - - - performance
+EOF
+for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo performance > "$g" 2>/dev/null || true; done
+for e in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do echo performance > "$e" 2>/dev/null || true; done
+for b in /sys/devices/system/cpu/cpu*/power/energy_perf_bias; do echo performance > "$b" 2>/dev/null || true; done
+
 echo -e "\n\033[0;32m✓ System optimization complete! Resource usage minimized and essentials in place.\033[0m"

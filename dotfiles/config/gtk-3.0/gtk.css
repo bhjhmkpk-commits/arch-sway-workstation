@@ -1,0 +1,70 @@
+/* 🌿 Warm Dark Eye-Care Palette (Everforest Earth Theme) */
+@define-color window_bg_color #1e2a24;
+@define-color window_fg_color #e6e2d8;
+@define-color view_bg_color #23382f;
+@define-color view_fg_color #e6e2d8;
+@define-color headerbar_bg_color #1a241f;
+@define-color headerbar_fg_color #e6e2d8;
+@define-color headerbar_border_color #36453b;
+@define-color card_bg_color #23382f;
+@define-color card_fg_color #e6e2d8;
+@define-color popover_bg_color #1e2a24;
+@define-color popover_fg_color #e6e2d8;
+@define-color accent_color #a7c080;
+@define-color accent_bg_color #365042;
+@define-color accent_fg_color #f2ede4;
+@define-color destructive_color #e67e80;
+@define-color destructive_bg_color #4a2828;
+@define-color destructive_fg_color #f2ede4;
+@define-color success_color #a7c080;
+@define-color success_bg_color #2a3a30;
+@define-color warning_color #dbbc7f;
+@define-color warning_bg_color #4a3e28;
+@define-color error_color #e67e80;
+@define-color error_bg_color #4a2828;
+
+/* Application Surfaces */
+window, .background {
+    background-color: #1e2a24;
+    color: #e6e2d8;
+}
+
+headerbar {
+    background-color: #23382f;
+    color: #e6e2d8;
+    border-bottom: 1px solid #36453b;
+}
+
+scrolledwindow, treeview, iconview, .view {
+    background-color: #23382f;
+    color: #e6e2d8;
+}
+
+entry, searchbar {
+    background-color: #283b32;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+}
+
+entry:focus {
+    border-color: #a7c080;
+}
+
+button {
+    background-color: #283b32;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+}
+
+button:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+}
+
+button:active, button:checked {
+    background-color: #365042;
+    border-color: #a7c080;
+    color: #f2ede4;
+}

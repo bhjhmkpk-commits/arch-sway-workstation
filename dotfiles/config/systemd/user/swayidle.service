@@ -7,8 +7,8 @@ After=graphical-session.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/swayidle -w \
-    timeout 300 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-    timeout 900 'swaylock -f' \
+    timeout 300 'swaylock -f' \
+    timeout 330 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
     before-sleep 'swaylock -f' \
     lock 'swaylock -f'
 Restart=on-failure

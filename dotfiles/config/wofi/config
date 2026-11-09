@@ -11,4 +11,5 @@ hide_scroll=true
 no_actions=true
 insensitive=true
 parse_search=true
+matching=multi-contains
 stylesheet=style.css

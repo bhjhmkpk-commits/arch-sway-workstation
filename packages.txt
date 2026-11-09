@@ -10,7 +10,7 @@ mako
 xdg-desktop-portal-wlr
 xdg-desktop-portal-gtk
 xorg-xwayland
-polkit-gnome
+lxsession
 
 # Core Graphics & Driver Stack
 mesa
@@ -31,6 +31,9 @@ thunar
 thunar-archive-plugin
 tumbler
 gvfs
+gvfs-mtp
+gvfs-gphoto2
+android-udev
 xarchiver
 unzip
 7zip
@@ -78,3 +81,11 @@ pacman-contrib
 ffmpegthumbnailer
 xdg-user-dirs
 github-cli
+
+# Minimal Login Manager
+greetd
+greetd-tuigreet
+
+# Themes & Eye Care Dark Styling
+adw-gtk-theme
+papirus-icon-theme

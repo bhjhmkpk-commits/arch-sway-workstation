@@ -1,166 +1,334 @@
-#!/usr/bin/env bash
-# ==============================================================================
-# ☀️ Arch Sway Workstation - Fast Coalescing Display Brightness Controller
-# Instant Waybar visual updates + debounced DDC/CI hardware I2C execution
-# ==============================================================================
+#!/usr/bin/env python3
+"""
+☀️ Arch Sway Workstation - Smooth Hardware Brightness Controller
+Instant Waybar UI feedback + smooth DDC/CI hardware ramp + zero-collision mutex
+Supports both desktop external displays (via DDC/CI) and laptop screens (via sysfs).
+"""
 
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/brightness"
-CACHE_FILE="$CONFIG_DIR/val"
-TARGET_FILE="$CONFIG_DIR/target"
-BUS_FILE="$CONFIG_DIR/bus"
-PID_FILE="$CONFIG_DIR/worker.pid"
+import os
+import sys
+import time
+import json
+import signal
+import subprocess
+from pathlib import Path
 
-mkdir -p "$CONFIG_DIR"
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 
-DEFAULT_BRIGHTNESS=45
-MIN_BRIGHTNESS=5
-MAX_BRIGHTNESS=100
-STEP=5
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "brightness"
+CACHE_FILE = CONFIG_DIR / "val"
+TARGET_FILE = CONFIG_DIR / "target"
+HW_FILE = CONFIG_DIR / "hw_val"
+BUS_FILE = CONFIG_DIR / "bus"
+LOCK_FILE = CONFIG_DIR / "worker.lock"
 
-get_bus() {
-    if [[ -f "$BUS_FILE" ]]; then
-        cat "$BUS_FILE"
+DEFAULT_BRIGHTNESS = 45
+MIN_BRIGHTNESS = 5
+MAX_BRIGHTNESS = 100
+STEP = 5
+
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+# ── Backlight Detection ───────────────────────────────────────────────────────
+
+def has_backlight_device() -> bool:
+    sys_bl = Path("/sys/class/backlight")
+    if sys_bl.exists():
+        try:
+            return any(d.is_dir() for d in sys_bl.iterdir())
+        except Exception:
+            return False
+    return False
+
+def get_bus() -> str:
+    if BUS_FILE.exists():
+        try:
+            b = BUS_FILE.read_text().strip()
+            if b:
+                return b
+        except Exception:
+            pass
+    try:
+        out = subprocess.check_output(
+            ["ddcutil", "--skip-ddc-checks", "detect", "--brief"],
+            stderr=subprocess.DEVNULL, text=True, timeout=3.0
+        )
+        for line in out.splitlines():
+            if "I2C bus:" in line:
+                bus = line.strip().split()[-1].replace("/dev/i2c-", "")
+                BUS_FILE.write_text(bus)
+                return bus
+    except Exception:
+        pass
+    BUS_FILE.write_text("1")
+    return "1"
+
+# ── Hardware Query & Atomic State ─────────────────────────────────────────────
+
+def write_file_atomic(path: Path, content: str):
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(f"{content.strip()}\n")
+    tmp.replace(path)
+
+def probe_hardware_brightness() -> int:
+    if has_backlight_device():
+        try:
+            out = subprocess.check_output(["brightnessctl", "get"], stderr=subprocess.DEVNULL, text=True)
+            max_out = subprocess.check_output(["brightnessctl", "max"], stderr=subprocess.DEVNULL, text=True)
+            curr = int(out.strip())
+            max_val = int(max_out.strip())
+            pct = int(round((curr / max_val) * 100))
+            write_file_atomic(HW_FILE, str(pct))
+            return pct
+        except Exception:
+            pass
+
+    bus = get_bus()
+    try:
+        out = subprocess.check_output(
+            ["ddcutil", "--bus", bus, "getvcp", "10", "--brief"],
+            stderr=subprocess.DEVNULL, text=True, timeout=2.0
+        )
+        parts = out.strip().split()
+        if len(parts) >= 4 and parts[3].isdigit():
+            val = int(parts[3])
+            write_file_atomic(HW_FILE, str(val))
+            return val
+    except Exception:
+        pass
+    return DEFAULT_BRIGHTNESS
+
+def get_cached_brightness() -> int:
+    if CACHE_FILE.exists():
+        try:
+            val = int(CACHE_FILE.read_text().strip())
+            if MIN_BRIGHTNESS <= val <= MAX_BRIGHTNESS:
+                return val
+        except Exception:
+            pass
+    val = probe_hardware_brightness()
+    write_file_atomic(CACHE_FILE, str(val))
+    write_file_atomic(TARGET_FILE, str(val))
+    return val
+
+# ── Waybar & OSD Notifications ────────────────────────────────────────────────
+
+def get_icon(val: int) -> str:
+    if val >= 80:
+        return "󰃠"
+    elif val >= 50:
+        return "󰃟"
+    elif val >= 25:
+        return "󰃞"
+    return "󰃝"
+
+def get_class(val: int) -> str:
+    if val >= 80:
+        return "high"
+    elif val >= 50:
+        return "medium"
+    elif val >= 25:
+        return "low"
+    return "dim"
+
+def signal_waybar():
+    user = os.environ.get("USER", "bohar")
+    try:
+        pids = subprocess.check_output(["pgrep", "-u", user, "-x", "waybar"], text=True)
+        for pid_str in pids.strip().split():
+            os.kill(int(pid_str), signal.SIGRTMIN + 9)
+    except Exception:
+        pass
+
+def send_osd_notification(val: int):
+    try:
+        subprocess.run([
+            "notify-send",
+            "-t", "1000",
+            "-h", "string:x-canonical-private-synchronous:brightness",
+            "-h", f"int:value:{val}",
+            "-i", "display-brightness-symbolic",
+            "Brightness",
+            f"{val}%"
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+def status():
+    val = get_cached_brightness()
+    icon = get_icon(val)
+    data = {
+        "text": f"{icon} {val}%",
+        "tooltip": (
+            f"Display Brightness: {val}%\n\n"
+            f"• Scroll: Smooth Adjust (±{STEP}%)\n"
+            "• Left Click: Cycle Presets (25% - 100%)\n"
+            "• Right Click: Toggle Dim / Bright"
+        ),
+        "percentage": val,
+        "class": ["brightness", get_class(val)]
+    }
+    print(json.dumps(data))
+
+# ── Hardware Worker & Smooth Transition Ramp ──────────────────────────────────
+
+def apply_hardware(bus: str, val: int) -> bool:
+    if has_backlight_device():
+        try:
+            res = subprocess.run(
+                ["brightnessctl", "set", f"{val}%", "-q"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1.0
+            )
+            return res.returncode == 0
+        except Exception:
+            return False
+
+    try:
+        res = subprocess.run([
+            "ddcutil", "--bus", bus, "setvcp", "10", str(val),
+            "--noverify", "--sleep-multiplier=0.1"
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2.0)
+        return res.returncode == 0
+    except Exception:
+        return False
+
+def worker_loop():
+    if not fcntl:
         return
-    fi
-    # Fast detect bus
-    local detected
-    detected=$(ddcutil --skip-ddc-checks detect --brief 2>/dev/null | awk '/I2C bus:/ { sub(/^.*\/i2c-/, "", $NF); print $NF; exit }')
-    if [[ -n "$detected" ]]; then
-        echo "$detected" > "$BUS_FILE"
-        echo "$detected"
-    else
-        echo "1" > "$BUS_FILE"
-        echo "1"
-    fi
-}
-
-get_brightness() {
-    if [[ -f "$CACHE_FILE" ]]; then
-        local val
-        val=$(<"$CACHE_FILE")
-        if [[ "$val" =~ ^[0-9]+$ ]] && (( val >= MIN_BRIGHTNESS && val <= MAX_BRIGHTNESS )); then
-            echo "$val"
-            return
-        fi
-    fi
-    local bus
-    bus=$(get_bus)
-    local probed
-    probed=$(ddcutil --bus "$bus" getvcp 10 --brief 2>/dev/null | awk '{print $4}')
-    if [[ "$probed" =~ ^[0-9]+$ ]]; then
-        echo "$probed" > "$CACHE_FILE"
-        echo "$probed"
-    else
-        echo "$DEFAULT_BRIGHTNESS" > "$CACHE_FILE"
-        echo "$DEFAULT_BRIGHTNESS"
-    fi
-}
-
-signal_waybar() {
-    pkill -RTMIN+9 waybar >/dev/null 2>&1 || true
-    pkill -SIGRTMIN+9 waybar >/dev/null 2>&1 || true
-}
-
-apply_hardware_brightness() {
-    local target="$1"
-    local bus
-    bus=$(get_bus)
-    echo "$target" > "$TARGET_FILE"
-
-    # If background worker is already running, it will automatically pick up the new target
-    if [[ -f "$PID_FILE" ]] && kill -0 "$(<"$PID_FILE")" 2>/dev/null; then
+    lock_fd = open(LOCK_FILE, "w")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (BlockingIOError, OSError):
+        # Another worker is already executing
         return
-    fi
 
-    (
-        echo $$ > "$PID_FILE"
-        # 40ms debounce: allows rapid mouse scrolls to coalesce into a single hardware command
-        python3 -c 'import time; time.sleep(0.04)' 2>/dev/null || true
+    bus = get_bus()
 
-        last_applied=""
-        while true; do
-            curr=$(<"$TARGET_FILE")
-            if [[ "$curr" == "$last_applied" ]]; then
+    # Determine last confirmed hardware level
+    last_applied = None
+    if HW_FILE.exists():
+        try:
+            last_applied = int(HW_FILE.read_text().strip())
+        except Exception:
+            pass
+    if last_applied is None:
+        last_applied = probe_hardware_brightness()
+
+    try:
+        while True:
+            # 60ms debounce window allows fast scroll events to coalesce
+            time.sleep(0.06)
+
+            target = last_applied
+            if TARGET_FILE.exists():
+                try:
+                    target = int(TARGET_FILE.read_text().strip())
+                except Exception:
+                    pass
+
+            if target == last_applied:
+                # Settle window: wait 250ms for any lagging user input before exiting
+                time.sleep(0.25)
+                if TARGET_FILE.exists():
+                    try:
+                        target = int(TARGET_FILE.read_text().strip())
+                    except Exception:
+                        pass
+                if target == last_applied:
+                    break
+
+            # Smooth ramping for large transitions (|target - last_applied| >= 20)
+            diff = target - last_applied
+            if abs(diff) >= 20 and not has_backlight_device():
+                step_size = 15 if diff > 0 else -15
+                curr = last_applied
+                while (diff > 0 and curr + step_size < target) or (diff < 0 and curr + step_size > target):
+                    curr += step_size
+                    apply_hardware(bus, curr)
+                    time.sleep(0.06)
+                    # Check if target changed during ramp
+                    try:
+                        new_target = int(TARGET_FILE.read_text().strip())
+                        if new_target != target:
+                            target = new_target
+                            diff = target - curr
+                    except Exception:
+                        pass
+
+            apply_hardware(bus, target)
+            last_applied = target
+            write_file_atomic(HW_FILE, str(target))
+
+    finally:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            lock_fd.close()
+        except Exception:
+            pass
+
+def ensure_worker():
+    if not fcntl:
+        return
+    try:
+        lock_fd = open(LOCK_FILE, "w")
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # Lock was free: release and spawn background worker
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        lock_fd.close()
+        subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "_worker"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+    except (BlockingIOError, OSError):
+        # Worker is already running, it will automatically consume TARGET_FILE
+        pass
+
+def update_brightness(new_val: int):
+    new_val = max(MIN_BRIGHTNESS, min(MAX_BRIGHTNESS, new_val))
+    write_file_atomic(CACHE_FILE, str(new_val))
+    write_file_atomic(TARGET_FILE, str(new_val))
+    signal_waybar()
+    send_osd_notification(new_val)
+    ensure_worker()
+
+# ── Main Entrypoint ───────────────────────────────────────────────────────────
+
+def main():
+    arg = sys.argv[1] if len(sys.argv) > 1 else "status"
+
+    if arg == "status":
+        status()
+    elif arg in ("inc", "up"):
+        curr = get_cached_brightness()
+        update_brightness(curr + STEP)
+    elif arg in ("dec", "down"):
+        curr = get_cached_brightness()
+        update_brightness(curr - STEP)
+    elif arg == "set" and len(sys.argv) > 2:
+        try:
+            update_brightness(int(sys.argv[2]))
+        except ValueError:
+            pass
+    elif arg == "cycle":
+        curr = get_cached_brightness()
+        presets = [25, 50, 75, 100]
+        next_val = 25
+        for p in presets:
+            if p > curr:
+                next_val = p
                 break
-            fi
-            last_applied="$curr"
-            ddcutil --bus "$bus" setvcp 10 "$last_applied" --noverify >/dev/null 2>&1
-        done
-        rm -f "$PID_FILE"
-    ) & disown
-}
+        update_brightness(next_val)
+    elif arg == "toggle":
+        curr = get_cached_brightness()
+        update_brightness(65 if curr <= 25 else 20)
+    elif arg == "_worker":
+        worker_loop()
+    else:
+        print("Usage: brightness-ctrl {status|inc|dec|set <val>|cycle|toggle}")
 
-get_icon() {
-    local val="$1"
-    if (( val >= 80 )); then
-        echo "󰃠"
-    elif (( val >= 50 )); then
-        echo "󰃟"
-    elif (( val >= 25 )); then
-        echo "󰃞"
-    else
-        echo "󰃝"
-    fi
-}
-
-case "${1:-status}" in
-    inc|up)
-        current=$(get_brightness)
-        new_val=$(( current + STEP ))
-        if (( new_val > MAX_BRIGHTNESS )); then new_val=$MAX_BRIGHTNESS; fi
-        echo "$new_val" > "$CACHE_FILE"
-        signal_waybar
-        apply_hardware_brightness "$new_val"
-        ;;
-    dec|down)
-        current=$(get_brightness)
-        new_val=$(( current - STEP ))
-        if (( new_val < MIN_BRIGHTNESS )); then new_val=$MIN_BRIGHTNESS; fi
-        echo "$new_val" > "$CACHE_FILE"
-        signal_waybar
-        apply_hardware_brightness "$new_val"
-        ;;
-    set)
-        new_val="${2:-$DEFAULT_BRIGHTNESS}"
-        if (( new_val > MAX_BRIGHTNESS )); then new_val=$MAX_BRIGHTNESS; fi
-        if (( new_val < MIN_BRIGHTNESS )); then new_val=$MIN_BRIGHTNESS; fi
-        echo "$new_val" > "$CACHE_FILE"
-        signal_waybar
-        apply_hardware_brightness "$new_val"
-        ;;
-    cycle)
-        current=$(get_brightness)
-        case "$current" in
-            25) next=50 ;;
-            50) next=75 ;;
-            75) next=100 ;;
-            100) next=25 ;;
-            *)
-                if (( current < 50 )); then next=50; else next=100; fi
-                ;;
-        esac
-        echo "$next" > "$CACHE_FILE"
-        signal_waybar
-        apply_hardware_brightness "$next"
-        ;;
-    toggle)
-        current=$(get_brightness)
-        if (( current <= 25 )); then
-            next=60
-        else
-            next=20
-        fi
-        echo "$next" > "$CACHE_FILE"
-        signal_waybar
-        apply_hardware_brightness "$next"
-        ;;
-    status)
-        val=$(get_brightness)
-        icon=$(get_icon "$val")
-        printf '{"text":"%s %s%%","tooltip":"Display Brightness: %s%%\\n\\n• Scroll: Smooth Adjust (+/- %s%%)\\n• Left Click: Cycle Presets (25%% - 100%%)\\n• Right Click: Toggle Dim / Bright","percentage":%s,"class":"brightness"}\n' "$icon" "$val" "$val" "$STEP" "$val"
-        ;;
-    *)
-        echo "Usage: $0 {status|inc|dec|set <val>|cycle|toggle}"
-        exit 1
-        ;;
-esac
+if __name__ == "__main__":
+    main()

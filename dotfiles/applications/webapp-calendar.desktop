@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Calendar
+GenericName=Google Calendar
+Comment=Google Calendar Web Application
+Exec=chromium --app="https://calendar.google.com/calendar" --name="webapp-calendar" --class="WebApp-calendar"
+Icon=webapp-calendar
+Terminal=false
+Type=Application
+Categories=Network;WebApplication;

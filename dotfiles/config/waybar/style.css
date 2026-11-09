@@ -53,7 +53,7 @@ window#waybar.empty #window {
     font-weight: bold;
 }
 #custom-wellbeing.paused {
-    color: #929e92;
+    border-color: #3d4a40;
 }
 #custom-wellbeing.goal-reached {
     color: #e4c58a;

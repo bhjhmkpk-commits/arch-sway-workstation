@@ -19,6 +19,7 @@ from pathlib import Path
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "wellbeing"
 STATE_FILE = STATE_DIR / "state.json"
 SOCK_FILE = STATE_DIR / "daemon.sock"
+WAYBAR_CACHE = Path(f"/run/user/{os.getuid()}/wellbeing-waybar.json")
 
 DEFAULT_WORK_MIN = 45
 DEFAULT_BREAK_MIN = 15
@@ -35,6 +36,31 @@ def load_saved_state():
         except Exception:
             pass
     return {}
+
+def sanitize_app_dict(apps):
+    cleaned = {}
+    for k, v in (apps or {}).items():
+        k_str = str(k).strip()
+        if not k_str or k_str.isdigit():
+            continue
+        if "music.youtube" in k_str.lower():
+            name = "YouTube Music"
+        elif "youtube" in k_str.lower():
+            name = "YouTube"
+        elif "github" in k_str.lower():
+            name = "GitHub"
+        elif "pavucontrol" in k_str.lower() or "pavuc" in k_str.lower():
+            name = "Volume Control"
+        elif "mail.google" in k_str.lower():
+            name = "Gmail"
+        elif "satty" in k_str.lower():
+            name = "Screenshot Tool"
+        elif k_str.lower().startswith("chrome-"):
+            name = k_str[7:].split("__")[0].split("-")[0].capitalize()
+        else:
+            name = k_str
+        cleaned[name] = cleaned.get(name, 0) + v
+    return cleaned
 
 def init_state():
     saved = load_saved_state()
@@ -86,6 +112,9 @@ def init_state():
         }
     if "history" not in state:
         state["history"] = {}
+
+    if "apps" in state.get("screen_time", {}):
+        state["screen_time"]["apps"] = sanitize_app_dict(state["screen_time"]["apps"])
 
     return state
 
@@ -169,6 +198,42 @@ def clean_app_identity(app_id, class_name, title):
     if "swaylock" in app or "swaylock" in cls or "wofi" in app:
         return None
 
+    # Filter out empty or pure workspace/digit strings
+    raw = (app_id or class_name or title or "").strip()
+    if not raw or raw.isdigit():
+        return None
+
+    # Webapps & PWAs
+    if "music.youtube" in app or "music.youtube" in t:
+        return "YouTube Music"
+    if "youtube" in app or "youtube" in t:
+        return "YouTube"
+    if "mail.google" in app or "mail.google" in t or "gmail" in app:
+        return "Gmail"
+    if "calendar.google" in app or "calendar.google" in t:
+        return "Google Calendar"
+    if "messages.google" in app or "messages.google" in t:
+        return "Google Messages"
+    if "github" in app or "github" in t:
+        return "GitHub"
+    if "chatgpt" in app or "chatgpt" in t:
+        return "ChatGPT"
+    if "whatsapp" in app or "whatsapp" in t:
+        return "WhatsApp"
+    if "telegram" in app or "telegram" in t:
+        return "Telegram"
+    if "notion" in app or "notion" in t:
+        return "Notion"
+    if "spotify" in app or "spotify" in t:
+        return "Spotify"
+    if "figma" in app or "figma" in t:
+        return "Figma"
+    if "discord" in app or "discord" in t:
+        return "Discord"
+    if "slack" in app or "slack" in t:
+        return "Slack"
+
+    # Common Applications
     if "foot" in app or "terminal" in app:
         if "nvim" in t or "vim" in t:
             return "Neovim"
@@ -182,20 +247,28 @@ def clean_app_identity(app_id, class_name, title):
             return "System Monitor"
         return "Foot Terminal"
 
+    if "pavucontrol" in app or "pavucontrol" in cls or "pavuc" in app:
+        return "Volume Control"
+    if "satty" in app or "satty" in cls:
+        return "Screenshot Tool"
+    if "viewnior" in app or "viewnior" in cls:
+        return "Image Viewer"
+    if "mpv" in app or "mpv" in cls:
+        return "MPV Media Player"
     if "brave" in app or "brave" in cls:
         return "Brave Origin"
     if "chromium" in app or "chromium" in cls:
-        if "youtube music" in t:
-            return "YouTube Music"
-        elif "youtube" in t:
-            return "YouTube"
         return "Chromium Browser"
     if "firefox" in app or "firefox" in cls:
         return "Firefox"
     if "thunar" in app or "thunar" in cls:
         return "Thunar File Manager"
 
-    raw = app_id or class_name or title
+    # Clean raw string if needed (strip Chrome PWA prefix if any)
+    if raw.lower().startswith("chrome-"):
+        parts = raw[7:].split("__")[0].split("-")[0]
+        return parts.capitalize()
+
     return raw[:20].capitalize()
 
 def get_active_app():
@@ -261,6 +334,15 @@ def format_sot(secs):
         return f"{h}h {m:02d}m"
     return f"{m}m"
 
+def format_sot_exact(secs):
+    s = max(0, int(secs))
+    h = s // 3600
+    m = (s % 3600) // 60
+    rem_s = s % 60
+    if h > 0:
+        return f"{h}h {m:02d}m {rem_s:02d}s"
+    return f"{m}m {rem_s:02d}s"
+
 # ── Daemon Server ─────────────────────────────────────────────────────────────
 
 def run_daemon():
@@ -278,6 +360,7 @@ def run_daemon():
 
     state = init_state()
     save_state(state)
+    update_waybar_cache(state)
 
     last_tick = time.time()
     last_save = time.time()
@@ -297,6 +380,7 @@ def run_daemon():
                         resp = handle_command(state, req)
                         conn.sendall(json.dumps(resp).encode("utf-8") + b"\n")
                         save_state(state)
+                        update_waybar_cache(state)
                 except Exception as ex:
                     try:
                         conn.sendall(json.dumps({"status": "error", "message": str(ex)}).encode("utf-8") + b"\n")
@@ -373,6 +457,8 @@ def run_daemon():
                             save_state(state)
                             last_save = now
 
+                update_waybar_cache(state)
+
                 # Sync state periodically
                 if now - last_save >= 2.0:
                     save_state(state)
@@ -394,12 +480,30 @@ def handle_command(state, req):
         return {"status": "ok", "state": state}
     elif cmd == "toggle":
         ec["paused"] = not ec.get("paused", False)
+        if ec["paused"]:
+            send_notification(
+                "⏸ Eye Care Timer Paused",
+                "Break timer is paused.\nScreen-on time continues recording in background."
+            )
+        else:
+            send_notification(
+                "▶ Eye Care Timer Resumed",
+                f"Break countdown resumed ({format_timer(ec['remaining_seconds'])} remaining)."
+            )
         return {"status": "ok", "paused": ec["paused"], "phase": ec["phase"]}
     elif cmd == "pause":
         ec["paused"] = True
+        send_notification(
+            "⏸ Eye Care Timer Paused",
+            "Break timer is paused.\nScreen-on time continues recording in background."
+        )
         return {"status": "ok", "paused": True}
     elif cmd == "resume":
         ec["paused"] = False
+        send_notification(
+            "▶ Eye Care Timer Resumed",
+            f"Break countdown resumed ({format_timer(ec['remaining_seconds'])} remaining)."
+        )
         return {"status": "ok", "paused": False}
     elif cmd == "reset":
         if ec["phase"] == "break":
@@ -460,7 +564,98 @@ def send_client_command(cmd_dict):
     except Exception:
         return None
 
-# ── Waybar Streaming Mode ────────────────────────────────────────────────────
+# ── Waybar Streaming & Line Mode ──────────────────────────────────────────────
+
+def build_waybar_payload(state):
+    st = state.get("screen_time", {})
+    ec = state.get("eye_care", {})
+
+    sot_sec = st.get("sot_seconds", 0)
+    sot_str = format_sot(sot_sec)
+    sot_exact = format_sot_exact(sot_sec)
+    phase = ec.get("phase", "work")
+    paused = ec.get("paused", False)
+    rem_str = format_timer(ec.get("remaining_seconds", 0))
+    goal_h = st.get("goal_hours", DEFAULT_GOAL_HOURS)
+    goal_reached = st.get("goal_reached", False)
+    cycles = ec.get("cycle_count", 0)
+
+    # Icon & status representation with explicit Pango markup
+    # 1. Screen Time portion (ALWAYS stays active and vibrant green/gold)
+    if goal_reached:
+        sot_markup = f"<span color='#e4c58a'>󰔚 {sot_str}</span>"
+    else:
+        sot_markup = f"<span color='#b0d288'>󰔚 {sot_str}</span>"
+
+    # 2. Eye Care timer portion (changes color independently on pause/break/work)
+    if paused:
+        eye_icon = "󰏤" # pause
+        cls = "paused"
+        timer_markup = f"<span color='#929e92'>{eye_icon} {rem_str}</span>"
+    elif phase == "break":
+        eye_icon = "󰈉" # break / rest
+        cls = "break"
+        timer_markup = f"<span color='#ea8a8c' weight='bold'>{eye_icon} {rem_str}</span>"
+    else:
+        eye_icon = "󰈈" # eye work
+        cls = "work"
+        timer_markup = f"<span color='#8fcaa0'>{eye_icon} {rem_str}</span>"
+
+    if goal_reached:
+        cls += " goal-reached"
+
+    text = f"{sot_markup}  {timer_markup}"
+
+    # Tooltip construction
+    apps_dict = sanitize_app_dict(st.get("apps", {}))
+    top_apps = sorted(apps_dict.items(), key=lambda x: x[1], reverse=True)[:5]
+    apps_text = ""
+    for app_name, sec in top_apps:
+        apps_text += f"\n  • {app_name}: {format_sot(sec)}"
+    if not apps_text:
+        apps_text = "\n  • (Tracking in progress)"
+
+    status_lbl = "Paused (Screen time recording)" if paused else ("Break Time!" if phase == "break" else "Focus Session")
+    pct = min(100, int((sot_sec / (goal_h * 3600)) * 100)) if goal_h > 0 else 0
+
+    tooltip = (
+        f"🌿 Screen Care & Wellbeing\n"
+        f"───────────────────────────────\n"
+        f"⏱  Screen-On Time : {sot_exact} ({sot_str})\n"
+        f"    Tracking       : ● Live & Recording\n"
+        f"🎯  Daily Goal     : {goal_h}h ({pct}% reached)\n"
+        f"👀  Eye Care Timer : {rem_str} ({status_lbl})\n"
+        f"🔄  Cycles Today   : #{cycles} completed\n"
+        f"───────────────────────────────\n"
+        f"📱  Top Apps Today:{apps_text}\n"
+        f"───────────────────────────────\n"
+        f"Left Click  : Pause / Resume Eye Timer\n"
+        f"Right Click : Quick Action Menu (Wofi)\n"
+        f"Middle Click: Skip to Next Phase"
+    )
+
+    return {
+        "text": text,
+        "tooltip": tooltip,
+        "class": cls
+    }
+
+def update_waybar_cache(state):
+    try:
+        data = build_waybar_payload(state)
+        tmp = WAYBAR_CACHE.with_suffix(".tmp")
+        with open(tmp, "w") as f:
+            json.dump(data, f)
+            f.write("\n")
+        tmp.replace(WAYBAR_CACHE)
+    except Exception:
+        pass
+
+def run_line():
+    state = load_saved_state()
+    if not state:
+        state = init_state()
+    print(json.dumps(build_waybar_payload(state)))
 
 def run_stream():
     """Outputs JSON continuously to Waybar stdout at 1 line/sec (0 forks)."""
@@ -469,80 +664,19 @@ def run_stream():
             state = load_saved_state()
             if not state:
                 state = init_state()
-
-            st = state.get("screen_time", {})
-            ec = state.get("eye_care", {})
-
-            sot_str = format_sot(st.get("sot_seconds", 0))
-            phase = ec.get("phase", "work")
-            paused = ec.get("paused", False)
-            rem_str = format_timer(ec.get("remaining_seconds", 0))
-            goal_h = st.get("goal_hours", DEFAULT_GOAL_HOURS)
-            goal_reached = st.get("goal_reached", False)
-            cycles = ec.get("cycle_count", 0)
-
-            # Icon & status representation
-            if paused:
-                eye_icon = "󰏤" # pause
-                cls = "paused"
-                timer_display = f"{eye_icon} {rem_str}"
-            elif phase == "break":
-                eye_icon = "󰈉" # break / rest
-                cls = "break"
-                timer_display = f"{eye_icon} {rem_str}"
-            else:
-                eye_icon = "󰈈" # eye work
-                cls = "work"
-                timer_display = f"{eye_icon} {rem_str}"
-
-            if goal_reached:
-                cls += " goal-reached"
-
-            text = f"󰔚 {sot_str}  {timer_display}"
-
-            # Tooltip construction
-            top_apps = sorted(st.get("apps", {}).items(), key=lambda x: x[1], reverse=True)[:5]
-            apps_text = ""
-            for app_name, sec in top_apps:
-                apps_text += f"\n  • {app_name}: {format_sot(sec)}"
-            if not apps_text:
-                apps_text = "\n  • (Tracking in progress)"
-
-            status_lbl = "Paused" if paused else ("Break Time!" if phase == "break" else "Focus Session")
-
-            tooltip = (
-                f"🌿 Screen Care & Wellbeing\n"
-                f"───────────────────────────────\n"
-                f"⏱  Screen-On Time : {sot_str} (Goal: {goal_h}h)\n"
-                f"👀  Eye Care Timer : {rem_str} ({status_lbl})\n"
-                f"🔄  Cycles Today   : #{cycles} completed\n"
-                f"───────────────────────────────\n"
-                f"📱  Top Apps Today:{apps_text}\n"
-                f"───────────────────────────────\n"
-                f"Left Click  : Pause / Resume Eye Timer\n"
-                f"Right Click : Quick Action Menu (Wofi)\n"
-                f"Middle Click: Skip to Next Phase"
-            )
-
-            out = {
-                "text": text,
-                "tooltip": tooltip,
-                "class": cls
-            }
+            out = build_waybar_payload(state)
             sys.stdout.write(json.dumps(out) + "\n")
             sys.stdout.flush()
-
         except Exception as e:
             sys.stdout.write(json.dumps({"text": "🌿 Care", "tooltip": str(e), "class": "error"}) + "\n")
             sys.stdout.flush()
-
         time.sleep(1)
 
 # ── Interactive Menu (Wofi) ───────────────────────────────────────────────────
 
 def run_menu():
     menu_items = [
-        "⏸  Toggle Pause / Resume",
+        "⏸  Pause / Resume Eye Timer (Screen time keeps recording)",
         "☕  Take Break Now (15 min)",
         "⏰  Snooze 5 Minutes",
         "🔄  Reset Current Timer",
@@ -569,7 +703,7 @@ def run_menu():
     if not sel:
         return
 
-    if "Toggle Pause" in sel:
+    if "Pause / Resume" in sel or "Toggle Pause" in sel:
         send_client_command({"command": "toggle"})
     elif "Take Break Now" in sel:
         send_client_command({"command": "skip"}) # if work, skips to break
@@ -606,7 +740,8 @@ def run_menu():
     elif "App Breakdown" in sel:
         state = load_saved_state()
         st = state.get("screen_time", {})
-        top_apps = sorted(st.get("apps", {}).items(), key=lambda x: x[1], reverse=True)
+        apps_dict = sanitize_app_dict(st.get("apps", {}))
+        top_apps = sorted(apps_dict.items(), key=lambda x: x[1], reverse=True)
         lines = [f"{app}: {format_sot(sec)}" for app, sec in top_apps]
         body = "\n".join(lines) if lines else "No app usage recorded yet."
         send_notification("📊 Today's Screen Time Usage", body)
@@ -620,6 +755,8 @@ def main():
         run_daemon()
     elif arg == "stream":
         run_stream()
+    elif arg == "line":
+        run_line()
     elif arg == "menu":
         run_menu()
     elif arg in ["toggle", "pause", "resume", "reset", "skip", "snooze"]:
