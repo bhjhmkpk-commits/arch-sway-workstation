@@ -1,14 +1,40 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Waybar Launch & Reload Wrapper for Sway
-# Ensures clean single-instance execution across boots and Sway config reloads
+# 🚀 Waybar Supervisor for Sway
+# Ensures Waybar launches reliably on boot and survives config reloads
 # ==============================================================================
 
-# Terminate existing waybar instances if running
+LOGFILE="$HOME/.waybar.log"
+exec 1>> "$LOGFILE" 2>&1
+echo "=== waybar-run invoked: $(date) ==="
+
+# 1. Kill any existing Waybar processes
 pkill -x waybar 2>/dev/null
 while pgrep -x waybar >/dev/null 2>&1; do
     sleep 0.05
 done
 
-# Launch waybar
-exec /usr/bin/waybar
+# 2. Ensure Wayland display & Sway socket are available (up to 5s)
+for i in {1..50}; do
+    if [ -n "$WAYLAND_DISPLAY" ] && [ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/$WAYLAND_DISPLAY" ]; then
+        break
+    fi
+    sleep 0.1
+done
+
+# 3. Supervised launch: auto-restart on early boot crash
+while true; do
+    echo "[$(date)] Starting /usr/bin/waybar..."
+    /usr/bin/waybar
+    EXIT_CODE=$?
+    echo "[$(date)] Waybar exited with code $EXIT_CODE"
+
+    # Clean termination via SIGTERM/SIGINT (pkill on reload or shutdown)
+    if [ $EXIT_CODE -eq 143 ] || [ $EXIT_CODE -eq 130 ]; then
+        echo "[$(date)] Clean exit requested. Exiting supervisor."
+        exit 0
+    fi
+
+    # If crashed unexpectedly, wait 1s and restart
+    sleep 1
+done
