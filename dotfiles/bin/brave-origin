@@ -3,8 +3,8 @@
 # 🦁 Brave Browser Launcher Wrapper (Wayland & Hardware Accelerated)
 # ==============================================================================
 
-# Search for any installed flavor of Brave
-for bin in /usr/bin/brave-origin /usr/bin/brave-browser /usr/bin/brave; do
+# Search for any installed flavor of Brave (Origin, Nightly, Beta, Stable)
+for bin in /usr/bin/brave-origin /usr/bin/brave-origin-nightly /usr/bin/brave-origin-beta /usr/bin/brave-browser /usr/bin/brave /usr/bin/brave-nightly /usr/bin/brave-beta; do
     if [ -x "$bin" ]; then
         exec "$bin" \
             --ozone-platform-hint=auto \
