@@ -40,6 +40,12 @@
 | **Mobile**  | **Phone <> PC Clipboard Bridge** | **`$mod + Ctrl + p`** | 2-way phone & PC clipboard sync (Web QR, no app) |
 | **Mobile**  | **LocalSend (AirDrop style)** | **`$mod + Alt + l`** | 1-tap open-source wireless file & text share |
 | **Mobile**  | Universal Android Debloater | **`$mod + Alt + a`** | Safely remove pre-installed bloatware |
+| **Web Apps**| **Google Gemini AI** | **`$mod + Alt + g`** | Google Gemini conversational assistant |
+| **Web Apps**| **ChatGPT AI** | **`$mod + Alt + c`** | OpenAI ChatGPT web application |
+| **Web Apps**| **Claude AI** | **`$mod + Alt + k`** or **`d`** | Anthropic Claude AI assistant |
+| **Web Apps**| **WhatsApp Web** | **`$mod + Alt + w`** | Standalone WhatsApp Web client |
+| **Web Apps**| **Gmail** | **`$mod + Alt + m`** | Standalone Gmail inbox client |
+| **Web Apps**| YouTube / Music | **`$mod + Shift + y`** / **`m`** | Standalone YouTube & Music players |
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
 | **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Shift + o`** or **`Alt + Print`** | Select any area → extracted text to clipboard |

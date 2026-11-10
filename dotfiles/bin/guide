@@ -66,5 +66,13 @@ ${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
   ${C}\$mod + Backspace${RESET}         Lock screen (${DIM}swaylock${RESET})
   ${C}Print${RESET} / ${C}Shift + Print${RESET}      Full / cropped screenshot (${DIM}satty${RESET})
 
+${Y}🌐 6. WEB APPS & AI ASSISTANTS${RESET}
+  ${C}\$mod + Alt + g${RESET}           Gemini AI assistant (${DIM}Google${RESET})
+  ${C}\$mod + Alt + c${RESET}           ChatGPT assistant (${DIM}OpenAI${RESET})
+  ${C}\$mod + Alt + k${RESET} / ${C}+ d${RESET}     Claude AI assistant (${DIM}Anthropic${RESET})
+  ${C}\$mod + Alt + w${RESET}           WhatsApp Web
+  ${C}\$mod + Alt + m${RESET}           Gmail
+  ${C}\$mod + Shift + y${RESET} / ${C}+ m${RESET}   YouTube / YouTube Music
+
 ${G}================================================================================${RESET}
 "

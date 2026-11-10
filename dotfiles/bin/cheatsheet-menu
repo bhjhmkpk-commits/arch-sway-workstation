@@ -40,6 +40,11 @@ ENTRIES=(
   "📁 Thunar        │ Graphical file manager with MTP Android phone browsing │ Hotkey: \$mod+Shift+f|thunar"
   "📁 Yazi          │ Blazing-fast terminal file manager with image previews │ Hotkey: \$mod+Alt+f|foot --app-id=yazi -e yazi"
   "🌐 Chromium      │ Fast native Wayland web browser                        │ Hotkey: \$mod+b|chromium"
+  "🤖 Gemini AI     │ Google Gemini conversational AI assistant              │ Hotkey: \$mod+Alt+g  •  Web App|chromium --app='https://gemini.google.com/' --name='webapp-gemini' --class='WebApp-gemini'"
+  "🤖 ChatGPT       │ OpenAI ChatGPT assistant                               │ Hotkey: \$mod+Alt+c  •  Web App|chromium --app='https://chatgpt.com' --name='webapp-chatgpt' --class='WebApp-chatgpt'"
+  "🤖 Claude AI     │ Anthropic Claude AI assistant                          │ Hotkey: \$mod+Alt+k  •  Web App|chromium --app='https://claude.ai' --name='webapp-claude-ai' --class='WebApp-claude-ai'"
+  "💬 WhatsApp      │ WhatsApp Web messaging PWA                             │ Hotkey: \$mod+Alt+w  •  Web App|chromium --app='https://web.whatsapp.com' --name='webapp-whatsapp-web' --class='WebApp-whatsapp-web'"
+  "✉️ Gmail         │ Google Mail inbox PWA                                  │ Hotkey: \$mod+Alt+m  •  Web App|chromium --app='https://mail.google.com' --name='webapp-gmail' --class='WebApp-gmail'"
   "🔒 Swaylock      │ Secure Wayland session lock screen                     │ Hotkey: \$mod+Backspace / \$mod+Ctrl+l|swaylock"
 )
 
