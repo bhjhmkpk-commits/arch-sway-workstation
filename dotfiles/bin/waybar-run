@@ -4,7 +4,9 @@
 # Ensures Waybar launches reliably on boot and survives config reloads
 # ==============================================================================
 
-LOGFILE="$HOME/.waybar.log"
+LOGDIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+mkdir -p "$LOGDIR"
+LOGFILE="$LOGDIR/waybar.log"
 exec 1>> "$LOGFILE" 2>&1
 echo "=== waybar-run invoked: $(date) ==="
 
