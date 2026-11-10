@@ -74,9 +74,11 @@ bindsym XF86AudioPrev exec playerctl previous
 bindsym XF86MonBrightnessUp exec ~/.local/bin/brightness-ctrl inc
 bindsym XF86MonBrightnessDown exec ~/.local/bin/brightness-ctrl dec
 
-# ── 5. Screenshots (Grim & Slurp & Satty) ───────────────────────────────────
+# ── 5. Screenshots & OCR (Grim & Slurp & Satty & Tesseract) ─────────────────
 bindsym Print exec ~/.local/bin/screenshot full
 bindsym Shift+Print exec ~/.local/bin/screenshot area
+bindsym Mod1+Print exec ~/.local/bin/ocr-grab
+bindsym $mod+Shift+o exec ~/.local/bin/ocr-grab
 
 # ── 6. Window Navigation (Vim & Arrows) ────────────────────────────────────────
 bindsym $mod+h focus left

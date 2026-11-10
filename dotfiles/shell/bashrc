@@ -14,15 +14,24 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Modern Core Aliases (eza & neovim)
+# Modern Core Aliases (eza, bat, neovim, lazygit, qalc)
 alias ls='eza --icons --group-directories-first'
 alias ll='eza -la --icons --group-directories-first'
 alias la='eza -a --icons --group-directories-first'
 alias tree='eza --tree --icons'
 alias grep='grep --color=auto'
+alias cat='bat --style=plain --paging=never'
+alias catp='bat'
+alias lg='lazygit'
+alias calc='qalc'
 alias v='nvim'
 alias vi='nvim'
 alias vim='nvim'
+
+# Smart Navigation (zoxide)
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init bash)"
+fi
 
 # System Maintenance Shortcuts
 alias pacclean='sudo pacman -Rns $(pacman -Qtdq 2>/dev/null) 2>/dev/null'

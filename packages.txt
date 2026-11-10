@@ -49,6 +49,7 @@ usbutils
 dosfstools
 exfatprogs
 ntfs-3g
+ventoy-bin
 
 # Mobile & Android Management
 android-tools
@@ -63,12 +64,14 @@ pavucontrol
 playerctl
 sound-theme-freedesktop
 
-# Screenshot & Annotation Suite
+# Screenshot, OCR & Annotation Suite
 satty
 grim
 slurp
 wl-clipboard
 cliphist
+tesseract
+tesseract-data-eng
 
 # Hardware, Eye-Care & Wellbeing Controls
 brightnessctl
@@ -95,6 +98,13 @@ fd
 jq
 tealdeer
 lazygit
+bat
+zoxide
+uv
+gdu
+shellcheck
+qrencode
+libqalculate
 man-db
 man-pages
 

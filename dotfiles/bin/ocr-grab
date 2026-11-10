@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🚀 Instant Screen-to-Clipboard OCR
+# Uses slurp + grim to select screen area, tesseract to extract text,
+# and wl-copy to copy text to clipboard with notification
+# ==============================================================================
+
+GEOM="$(slurp 2>/dev/null)" || exit 0
+[[ -z "$GEOM" ]] && exit 0
+
+TEXT="$(grim -g "$GEOM" - | tesseract stdin stdout -l eng 2>/dev/null)"
+[[ -z "$TEXT" ]] && exit 0
+
+printf "%s" "$TEXT" | wl-copy
+PREVIEW="$(echo "$TEXT" | head -c 120 | tr '\n' ' ')"
+notify-send -a "Screen OCR" "Copied to Clipboard" "$PREVIEW..."
