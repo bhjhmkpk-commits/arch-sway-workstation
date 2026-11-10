@@ -1,81 +1,59 @@
 # 🚀 Arch Sway Workstation — Cheat Sheet & Power User Guide
 
-> **Quick Invocation:**
-> * Press **`$mod + k`** anywhere in Sway to launch the **Interactive Cheatsheet HUD & Launcher**.
+> **Quick Access Shortcuts:**
+> * Press **`$mod + k`** anywhere in Sway to launch the **Interactive Utility Chart & Guide** (what we have, what it's for, and how to use it).
+> * Press **`$mod + /`** (or **`$mod + ?`** / **`$mod + F1`**) to launch the **Searchable Keybinding Finder** (search any function or stock/custom shortcut).
 > * Type **`guide`** or **`cheat`** in any terminal for instant CLI reference.
 
 ---
 
-## 🎓 1. Student, Academic & Document Tools
+## ⌨️ Complete Keybinding Quick Reference
 
-| Action | Shortcut / Command | Tool | Purpose |
+| Domain | Action / Tool | Shortcut / Keybind | Notes |
 | :--- | :--- | :--- | :--- |
-| **Instant Screen OCR** | **`$mod + Shift + o`** or **`Alt + Print`** | `ocr-grab` + `tesseract` | Drag a box over any un-copyable lecture slide, video, or PDF → copies extracted text straight to clipboard. |
-| **PDF Annotation & Notes** | Open via Wofi or `xournalpp` | `Xournal++` | Handwriting, highlighting, typing notes, drawing formulas, and signing PDF application forms. |
-| **PDF Split, Merge & Crop** | Open via Wofi or `pdfarranger` | `PDF Arranger` | Visual drag-and-drop tool to rotate, split, merge, and crop PDF pages. |
-| **Math & Physics Engine** | `calc "<expr>"` | `libqalculate` (`qalc`) | Symbolic math, calculus, physical constants, and unit conversions (e.g., `calc "50 USD in INR"`, `calc "2.5 eV in J"`). |
-| **Desktop Calculator** | Open via Wofi or `galculator` | `galculator` | Lightweight GTK scientific calculator with algebraic and memory registers. |
-| **Quick Text Notes** | Open via Wofi or `mousepad` | `mousepad` | Fast GUI tabbed text editor with syntax highlighting for quick scratchpads. |
-
----
-
-## 📱 2. Android & Mobile Utilities
-
-| Action | Command / Shortcut | Tool | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Wi-Fi File Drop (QR Code)** | `share-wifi [file]` | `share-wifi` + `qrencode` | Generates a terminal QR code. Scan with your phone camera to download files over local Wi-Fi without cables or cloud apps. |
-| **Android Screen Mirroring** | `scrcpy` | `scrcpy` | 60fps low-latency screen mirror, audio forwarding, and keyboard/mouse control over USB or Wi-Fi. |
-| **Universal Debloater** | Open via Wofi or `uad-ng` | `universal-android-debloater` | Connect phone via ADB to safely remove or disable manufacturer/carrier bloatware. |
-| **USB File Transfer (MTP)** | Open `Thunar` | `gvfs-mtp` | Plug in your phone via USB and browse internal storage directly in Thunar. |
-
----
-
-## 💾 3. USB, Disks & Storage Management
-
-| Action | Command / Shortcut | Tool | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Disks GUI** | Open via Wofi or `gnome-disks` | `gnome-disk-utility` | Format drives (FAT32, exFAT, NTFS, ext4), burn/restore ISO images to USB, and check SMART health. |
-| **Multi-Boot USB Drive** | `ventoygui` | `ventoy-bin` | Format a USB flash drive once; drag and drop multiple Linux/Windows ISOs to boot any of them interactively. |
-| **Inspect USB Hardware** | `lsusb` | `usbutils` | List all connected USB devices, vendor IDs, and hub controllers. |
-| **Interactive Storage Space** | `gdu ~` | `gdu` | Lightning-fast, interactive arrow-key terminal disk usage analyzer. |
-
----
-
-## 💻 4. Developer, Linux & Terminal Workflows
-
-| Action | Command | Purpose |
-| :--- | :--- | :--- |
-| **Smart Directory Jump** | `z <partial-name>` | Learns folder habits. E.g., `z jam` jumps to `~/IIT JAM 2027`, `z sway` jumps to workstation repo. |
-| **Git Visual TUI** | `lg` | Full keyboard-driven interface for git commits, staging individual lines, diffs, and branch rebasing. |
-| **Fast Command Cheats** | `tldr <cmd>` | Real-world, practical usage examples (e.g., `tldr tar`, `tldr pacman`, `tldr adb`). |
-| **Syntax-Highlighted Cat** | `cat <file>` | Blazing fast colored file preview with line numbers powered by `bat`. |
-| **Paginated Git Diff View** | `catp <file>` | Full paginated viewer showing Git additions/deletions in the margin. |
-| **Isolated Python/AI Runner**| `uv run <script.py>` | Runs single-file Python scripts in isolated sandboxes without polluting system packages. |
-| **Script Bug Checker** | `shellcheck <script>` | Static analysis to find unquoted variables and syntax bugs in bash scripts. |
-
----
-
-## 🖥️ 5. Sway Desktop & Window Manager Keybindings
-
-| Keybinding | Action |
-| :--- | :--- |
-| **`$mod + k`** / **`$mod + F1`** | **Open Interactive Cheatsheet HUD & Action Launcher** |
-| **`$mod + d`** / **`$mod + Space`** | Application launcher (`wofi`) |
-| **`$mod + Return`** | Open Foot terminal |
-| **`$mod + Alt + Return`** | Open Persistent Tmux Work session |
-| **`$mod + Shift + v`** | Open Clipboard History Menu (`cliphist`) |
-| **`$mod + Escape`** | Open System & Resource Monitor (`btop`) |
-| **`$mod + b`** | Launch Chromium web browser |
-| **`$mod + Shift + b`** | Launch Brave Origin web browser |
-| **`$mod + w`** | Close / Kill focused window |
-| **`$mod + f`** | Toggle Fullscreen |
-| **`$mod + t`** | Toggle Floating mode |
-| **`$mod + Shift + r`** | Reload Sway compositor configuration |
-| **`$mod + Backspace`** / **`$mod + Ctrl + l`** | Lock screen (`swaylock`) |
-| **`Print`** | Full screen screenshot (opens in `satty`) |
-| **`Shift + Print`** | Selected area screenshot (opens in `satty`) |
-| **`$mod + Shift + o`** / **`Alt + Print`** | Extract text from screen to clipboard (OCR) |
-| **`$mod + Arrow Keys`** | Focus window (Left, Down, Up, Right) |
-| **`$mod + Shift + Arrow Keys`** | Move window (Left, Down, Up, Right) |
-| **`$mod + 1-10`** | Switch to Workspace 1–10 |
-| **`$mod + Shift + 1-10`** | Move container to Workspace 1–10 |
+| **HUD** | **Utility Chart & Guide** | **`$mod + k`** | Educational chart form guide; Enter launches tool |
+| **HUD** | **Searchable Keybinding Sheet** | **`$mod + /`** or **`$mod + ?`** | Search any action/shortcut; Enter triggers it |
+| **Launcher**| Application Search (Wofi) | **`$mod + d`** or **`$mod + Space`** | Native Wayland application menu |
+| **Terminal**| Foot Terminal | **`$mod + Return`** | Blazing-fast GPU-accelerated terminal |
+| **Terminal**| Persistent Tmux Work Session | **`$mod + Alt + Return`** | Re-attaches to background workspace |
+| **Clipboard**| Clipboard History (Cliphist) | **`$mod + Shift + v`** | Search, paste, or wipe clipboard |
+| **Monitor** | System & Task Monitor (Btop) | **`$mod + Escape`** | CPU, GPU, RAM, Disks, Networks |
+| **Browser** | Chromium Browser | **`$mod + b`** | Default Web Browser |
+| **Browser** | Brave Origin Nightly | **`$mod + Shift + b`** | Secondary Ad-blocking Browser |
+| **Files**   | Graphical File Manager (Thunar)| **`$mod + Shift + f`** | Thunar GUI with MTP phone browsing |
+| **Files**   | Terminal File Manager (Yazi) | **`$mod + Alt + f`** | Fast terminal file manager with image previews |
+| **PDF**     | Annotate & Sign (Xournal++) | **`$mod + p`** | Lecture notes, PDF highlighting, signing |
+| **PDF**     | Split, Merge & Crop (PDF Arranger)| **`$mod + Shift + p`** | Drag & drop PDF page manipulator |
+| **Math**    | Scientific Calculator (Galculator)| **`$mod + c`** | GTK scientific desktop calculator |
+| **Math**    | Physics, Calculus & Currency | `calc "<expr>"` | E.g. `calc "50 USD in INR"`, `calc "2.5 eV in J"` |
+| **Image**   | Image Editor & Cropper (Pinta)| **`$mod + i`** | Paint.NET alternative: crop, retouch, layers |
+| **Notes**   | Quick GUI Text Notes (Mousepad)| **`$mod + m`** | Fast tabbed text editor with syntax highlighting |
+| **Git**     | Interactive Git TUI (LazyGit) | **`$mod + g`** | Stage lines, commit, branch, diffs (`lg`) |
+| **USB**     | Disks & ISO Burner (GNOME Disks)| **`$mod + u`** | Format (FAT32/exFAT/NTFS) & flash ISO to USB |
+| **USB**     | Multi-Boot USB Engine (Ventoy) | **`$mod + Shift + u`** | Drag-and-drop multiple bootable ISOs |
+| **Disk**    | Interactive Storage Explorer | **`$mod + Ctrl + d`** | Arrow-key terminal storage usage (`gdu ~`) |
+| **Mobile**  | Android Screen Mirror (Scrcpy)| **`$mod + a`** | 60fps low-latency mirror & PC control |
+| **Mobile**  | Universal Android Debloater | **`$mod + Alt + a`** | Safely remove pre-installed bloatware |
+| **Mobile**  | Wi-Fi File Drop (Share-WiFi) | **`$mod + Ctrl + w`** | Terminal QR code for wireless file sharing |
+| **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
+| **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
+| **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Shift + o`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
+| **Display** | Toggle Night Light | **`$mod + n`** | Eye-care blue light reduction filter |
+| **Display** | Cycle Night Light Temperature | **`$mod + Shift + n`** | 4500K -> 3500K -> 2700K -> Off |
+| **Display** | Monitor Brightness Up / Down | **`XF86MonBrightnessUp / Down`** | Hardware DDC/CI monitor brightness |
+| **Audio**   | Volume Up / Down / Mute | **`Volume Keys`** | Pamixer PipeWire volume routing |
+| **Audio**   | Media Play / Pause | **`XF86AudioPlay`** or **`$mod + Alt + p`** | Universal playerctl control |
+| **Audio**   | Next / Previous Track | **`$mod + ]`** / **`$mod + [`** | Track skipping |
+| **Health**  | Wellbeing Eye Strain Menu | **`$mod + Alt + e`** | 20-20-20 rule & break timer settings |
+| **Session** | Lock Screen | **`$mod + Backspace`** or **`$mod + Ctrl + l`** | Secure Wayland swaylock |
+| **Session** | Reload Sway Config | **`$mod + Shift + r`** | In-place compositor reload |
+| **Session** | Exit Sway Dialog | **`$mod + Shift + e`** | Clean logout confirmation |
+| **Window**  | Close / Kill Window | **`$mod + w`** | Terminate active application |
+| **Window**  | Toggle Fullscreen | **`$mod + f`** | Dedicated fullscreen container |
+| **Window**  | Toggle Floating / Tiling | **`$mod + t`** | Float individual window |
+| **Window**  | Window Focus Navigation | **`$mod + Arrows`** or **`$mod + h, j, l, Up`** | Focus window direction |
+| **Window**  | Window Move Navigation | **`$mod + Shift + Arrows`** or **`h, j, k, l`** | Move container direction |
+| **Layout**  | Vertical / Horizontal Split | **`$mod + v`** / **`$mod + \`** | Set container split orientation |
+| **Layout**  | Stacking / Tabbed Layout | **`$mod + s`** / **`$mod + Shift + w`** | Tabbed or stacked container views |
+| **Workspaces**| Switch Workspace 1–10 | **`$mod + 1 .. 0`** | Instant workspace switching |
+| **Workspaces**| Move Container to Workspace | **`$mod + Shift + 1 .. 0`** | Move window to target workspace |

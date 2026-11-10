@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ⌨️ Arch Sway Workstation - Complete Searchable Keybinding Sheet
+# Bound to $mod+/ ($mod+slash) and $mod+? ($mod+question)
+# Type any keyword (window, split, workspace, volume, ocr, pdf, etc.)
+# Selecting an actionable entry executes or triggers it directly!
+# ==============================================================================
+
+CONF="$HOME/.config/wofi/cheatsheet.conf"
+STYLE="$HOME/.config/wofi/cheatsheet.css"
+
+ENTRIES=(
+  "🔍 [Launcher] Application Search Menu (Wofi)                 →   \$mod + d  /  \$mod + Space|wofi --show drun"
+  "⚡ [Launcher] Interactive Utility Chart & Guide               →   \$mod + k|~/.local/bin/cheatsheet-menu"
+  "⌨️ [Launcher] Searchable Keybinding Sheet                     →   \$mod + /  /  \$mod + ?|~/.local/bin/keysheet-menu"
+  "📋 [Launcher] Clipboard History Search & Paste (Cliphist)    →   \$mod + Shift + v|~/.local/bin/cliphist-menu"
+  "📊 [Launcher] System Resource & Task Monitor (Btop)           →   \$mod + Escape|foot --app-id=btop -e btop"
+  "💻 [Terminal] Open Foot Terminal                              →   \$mod + Return|foot"
+  "💻 [Terminal] Persistent Tmux Work Session                    →   \$mod + Alt + Return|foot --app-id=tmux -e tmux new -A -s Work"
+  "🔒 [Session] Lock Screen (Swaylock)                          →   \$mod + Backspace  /  \$mod + Ctrl + l|swaylock"
+  "🔄 [Session] Reload Sway Compositor Config                    →   \$mod + Shift + r|swaymsg reload"
+  "🚪 [Session] Exit / Logout Sway Session                      →   \$mod + Shift + e|swaynag -t warning -m 'Exit Sway?' -B 'Yes, exit' 'swaymsg exit'"
+  "❌ [Window] Close / Kill Focused Window                       →   \$mod + w|swaymsg kill"
+  "🖥️ [Window] Toggle Fullscreen Mode                            →   \$mod + f|swaymsg fullscreen toggle"
+  "🪟 [Window] Toggle Floating / Tiling Mode                    →   \$mod + t|swaymsg floating toggle"
+  "🎯 [Window] Toggle Focus Mode (Tiling / Floating)             →   \$mod + Shift + Space|swaymsg focus mode_toggle"
+  "🔄 [Window] Cycle Focus to Next Window Right                 →   Alt + Tab|swaymsg focus right"
+  "🔄 [Window] Cycle Focus to Prev Window Left                  →   Alt + Shift + Tab|swaymsg focus left"
+  "⬅️ [Window] Focus Window Left                                 →   \$mod + h  /  \$mod + Left|swaymsg focus left"
+  "⬇️ [Window] Focus Window Down                                 →   \$mod + j  /  \$mod + Down|swaymsg focus down"
+  "⬆️ [Window] Focus Window Up                                   →   \$mod + Up|swaymsg focus up"
+  "➡️ [Window] Focus Window Right                                →   \$mod + l  /  \$mod + Right|swaymsg focus right"
+  "📦 [Window] Move Window Left                                  →   \$mod + Shift + h  /  \$mod + Shift + Left|swaymsg move left"
+  "📦 [Window] Move Window Down                                  →   \$mod + Shift + j  /  \$mod + Shift + Down|swaymsg move down"
+  "📦 [Window] Move Window Up                                    →   \$mod + Shift + k  /  \$mod + Shift + Up|swaymsg move up"
+  "📦 [Window] Move Window Right                                 →   \$mod + Shift + l  /  \$mod + Shift + Right|swaymsg move right"
+  "🪟 [Layout] Split Window Horizontally                         →   \$mod + \\|swaymsg splith"
+  "🪟 [Layout] Split Window Vertically                           →   \$mod + v|swaymsg splitv"
+  "🪟 [Layout] Stacking Layout Mode                             →   \$mod + s|swaymsg layout stacking"
+  "🪟 [Layout] Tabbed Layout Mode                               →   \$mod + Shift + w|swaymsg layout tabbed"
+  "🪟 [Layout] Toggle Split Direction                           →   \$mod + e|swaymsg layout toggle split"
+  "🔢 [Workspace] Switch to Workspace 1..10                      →   \$mod + 1 .. 0|notify-send -a 'Workspaces' 'Switch Workspace' 'Press \$mod + [1-0] to switch workspaces.'"
+  "🔢 [Workspace] Move Container to Workspace 1..10              →   \$mod + Shift + 1 .. 0|notify-send -a 'Workspaces' 'Move Workspace' 'Press \$mod + Shift + [1-0] to move window.'"
+  "🌐 [App] Web Browser (Chromium)                               →   \$mod + b|chromium"
+  "🌐 [App] Web Browser (Brave Origin Nightly)                   →   \$mod + Shift + b|~/.local/bin/brave-origin"
+  "📁 [App] File Manager (Thunar GUI)                            →   \$mod + Shift + f|thunar"
+  "📁 [App] Terminal File Manager (Yazi)                         →   \$mod + Alt + f|foot --app-id=yazi -e yazi"
+  "🎓 [App] PDF Annotation & Note Taker (Xournal++)              →   \$mod + p|xournalpp"
+  "📑 [App] PDF Page Split, Merge & Rotate (PDF Arranger)        →   \$mod + Shift + p|pdfarranger"
+  "🧮 [App] Scientific Desktop Calculator (Galculator)           →   \$mod + c|galculator"
+  "🎨 [App] Image Editor & Cropper (Pinta)                       →   \$mod + i|pinta"
+  "📝 [App] Quick GUI Text Notes (Mousepad)                      →   \$mod + m|mousepad"
+  "📦 [App] Git Interactive TUI (LazyGit)                        →   \$mod + g|foot --app-id=lazygit -e lazygit"
+  "💾 [App] USB & Disk Manager / ISO Burner (Disks)              →   \$mod + u|gnome-disks"
+  "💾 [App] Multi-Boot USB Flash Drive Engine (Ventoy)           →   \$mod + Shift + u|ventoygui"
+  "💾 [App] Interactive Disk Storage Usage Explorer (GDU)        →   \$mod + Ctrl + d|foot --app-id=gdu -e gdu ~"
+  "📱 [App] Android Screen Mirror & Control (Scrcpy)             →   \$mod + a|scrcpy"
+  "📱 [App] Universal Android Debloater (UAD)                    →   \$mod + Alt + a|uad-ng"
+  "📱 [App] Wi-Fi File Drop via Terminal QR (Share-WiFi)         →   \$mod + Ctrl + w|foot --app-id=share-wifi -e ~/.local/bin/share-wifi"
+  "🌐 [App] Webapp Manager Dashboard                             →   \$mod + Shift + a|~/.local/bin/webapp gui"
+  "📺 [App] YouTube Web App                                      →   \$mod + Shift + y|chromium --app='https://youtube.com' --name='webapp-youtube' --class='WebApp-youtube'"
+  "🎵 [App] YouTube Music Web App                                →   \$mod + Shift + m|chromium --app='https://music.youtube.com' --name='webapp-youtube-music' --class='WebApp-youtube-music'"
+  "📷 [Capture] Full Screen Screenshot (Satty)                   →   Print|~/.local/bin/screenshot full"
+  "📷 [Capture] Area / Window Screenshot (Satty)                 →   Shift + Print|~/.local/bin/screenshot area"
+  "📷 [Capture] Instant Screen OCR to Clipboard (Tesseract)      →   \$mod + Shift + o  /  Alt + Print|~/.local/bin/ocr-grab"
+  "🌙 [Display] Toggle Eye-Care Night Light                      →   \$mod + n|~/.local/bin/nightlight toggle"
+  "🌙 [Display] Cycle Night Light Color Temperature              →   \$mod + Shift + n|~/.local/bin/nightlight cycle"
+  "☀️ [Display] Increase Monitor Brightness (DDC/CI Hardware)    →   XF86MonBrightnessUp|~/.local/bin/brightness-ctrl inc"
+  "☀️ [Display] Decrease Monitor Brightness (DDC/CI Hardware)    →   XF86MonBrightnessDown|~/.local/bin/brightness-ctrl dec"
+  "🔊 [Audio] Volume Up (+5%)                                    →   XF86AudioRaiseVolume|pamixer -i 5"
+  "🔉 [Audio] Volume Down (-5%)                                  →   XF86AudioLowerVolume|pamixer -d 5"
+  "🔇 [Audio] Mute / Unmute Audio Output                         →   XF86AudioMute|pamixer -t"
+  "⏯️ [Media] Media Play / Pause                                 →   XF86AudioPlay  /  \$mod + Alt + p|playerctl play-pause"
+  "⏭️ [Media] Media Next Track                                   →   XF86AudioNext  /  \$mod + ]|playerctl next"
+  "⏮️ [Media] Media Previous Track                               →   XF86AudioPrev  /  \$mod + [|playerctl previous"
+  "🧘 [Health] Digital Wellbeing Eye Strain & Break Menu         →   \$mod + Alt + e|~/.local/bin/sway-wellbeing menu"
+  "🧘 [Health] Toggle Digital Wellbeing Work Tracking            →   \$mod + Ctrl + e|~/.local/bin/sway-wellbeing toggle"
+)
+
+LABELS=""
+for entry in "${ENTRIES[@]}"; do
+    label="${entry%%|*}"
+    LABELS+="${label}"$'\n'
+done
+
+SELECTED=$(echo -n "$LABELS" | wofi --conf "$CONF" --style "$STYLE" --dmenu --prompt "⌨️ Keybinding Finder (\$mod+/)")
+
+if [[ -z "$SELECTED" ]]; then
+    exit 0
+fi
+
+for entry in "${ENTRIES[@]}"; do
+    label="${entry%%|*}"
+    action="${entry#*|}"
+    if [[ "$SELECTED" == "$label" ]]; then
+        eval "$action" &
+        exit 0
+    fi
+done

@@ -39,19 +39,45 @@ bindsym $mod+space exec $menu
 bindsym $mod+f fullscreen toggle
 bindsym $mod+Shift+space focus mode_toggle
 bindsym $mod+k exec ~/.local/bin/cheatsheet-menu
-bindsym $mod+F1 exec ~/.local/bin/cheatsheet-menu
+bindsym $mod+slash exec ~/.local/bin/keysheet-menu
+bindsym $mod+question exec ~/.local/bin/keysheet-menu
+bindsym $mod+F1 exec ~/.local/bin/keysheet-menu
 bindsym $mod+Shift+v exec ~/.local/bin/cliphist-menu
 bindsym $mod+Escape exec $term --app-id=btop -e btop
 bindsym $mod+Shift+r reload
 bindsym $mod+Backspace exec swaylock
 bindsym $mod+Shift+e exec swaynag -t warning -m "Exit Sway?" -B "Yes, exit" "swaymsg exit"
 
-# ── 2. Applications & Web Browsers ────────────────────────────────────────────
+# ── 2. Applications & Workstation Utilities ────────────────────────────────────
+# Web Browsers
 bindsym $mod+b exec chromium
 bindsym $mod+Shift+b exec ~/.local/bin/brave-origin
-bindsym $mod+Shift+c exec chromium
+
+# File Managers
 bindsym $mod+Shift+f exec thunar
 bindsym $mod+Mod1+f exec $term --app-id=yazi -e yazi
+
+# Academic & Documents
+bindsym $mod+p exec xournalpp
+bindsym $mod+Shift+p exec pdfarranger
+bindsym $mod+c exec galculator
+bindsym $mod+i exec pinta
+bindsym $mod+m exec mousepad
+
+# USB & Storage Utilities
+bindsym $mod+u exec gnome-disks
+bindsym $mod+Shift+u exec ventoygui
+bindsym $mod+Ctrl+d exec $term --app-id=gdu -e gdu ~
+
+# Android & Mobile Utilities
+bindsym $mod+a exec scrcpy
+bindsym $mod+Mod1+a exec uad-ng
+bindsym $mod+Ctrl+w exec $term --app-id=share-wifi -e ~/.local/bin/share-wifi
+
+# Developer Tools
+bindsym $mod+g exec $term --app-id=lazygit -e lazygit
+
+# Web Apps
 bindsym $mod+Shift+a exec ~/.local/bin/webapp gui
 bindsym $mod+Shift+y exec chromium --app="https://youtube.com" --name="webapp-youtube" --class="WebApp-youtube"
 bindsym $mod+Shift+m exec chromium --app="https://music.youtube.com" --name="webapp-youtube-music" --class="WebApp-youtube-music"

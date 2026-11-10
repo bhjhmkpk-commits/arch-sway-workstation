@@ -1,37 +1,41 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 🚀 Arch Sway Workstation - Dynamic Interactive Cheatsheet & Action HUD
-# Bound to $mod+k. Shows shortcuts, tools & launches selection directly
+# 🚀 Arch Sway Workstation - Interactive Utility Chart & Guide ($mod+k)
+# Displays tools in an organized chart: What we have | What it's for | How to use
+# Selecting any item executes it directly!
 # ==============================================================================
 
 CONF="$HOME/.config/wofi/cheatsheet.conf"
 STYLE="$HOME/.config/wofi/cheatsheet.css"
 
 ENTRIES=(
-  "📷 [OCR] Grab Text from Screen to Clipboard   →   \$mod+Shift+o / Alt+Print|~/.local/bin/ocr-grab"
-  "📑 [PDF] Annotate, Highlight & Sign Forms     →   Xournal++|xournalpp"
-  "📑 [PDF] Merge, Split, Rotate & Crop Pages    →   PDF Arranger|pdfarranger"
-  "📱 [Phone] Share Files over Wi-Fi (QR Code)   →   share-wifi|foot -e ~/.local/bin/share-wifi"
-  "📱 [Phone] Mirror & Control Android Screen   →   scrcpy|scrcpy"
-  "📱 [Phone] Universal Android Debloater       →   Universal Debloater|uad-ng"
-  "💾 [USB] Format, Partition & Flash ISOs       →   Disks (gnome-disks)|gnome-disks"
-  "💾 [USB] Multi-Boot ISO Flash Drive           →   Ventoy GUI|ventoygui"
-  "🎨 [Image] Edit, Crop & Retouch Layers        →   Pinta|pinta"
-  "📝 [Notes] Fast GUI Text Editor               →   Mousepad|mousepad"
-  "🧮 [Math] Physics, Calculus & Unit Calculator →   calc / qalc|foot -e qalc"
-  "🔢 [Math] Scientific Desktop Calculator       →   Calculator (galculator)|galculator"
-  "🗂️ [Nav] Smart Directory Jump                →   z <folder-name>|notify-send -a 'Cheatsheet' 'Smart Directory Jump' 'Use \"z <name>\" in terminal to jump directly to any folder.'"
-  "📦 [Git] Interactive TUI Git Manager          →   lg (lazygit)|foot -e lazygit"
-  "💡 [Help] Command Cheatsheets & Examples      →   tldr <cmd>|foot -e bash -c 'echo \"Usage: tldr <command> (e.g., tldr tar, tldr adb)\"; exec bash'"
-  "💾 [Disk] Interactive Storage Usage Explorer  →   gdu ~|foot -e gdu ~"
-  "🖥️ [System] Task & Resource Monitor           →   \$mod+Escape (btop)|foot --app-id=btop -e btop"
-  "📋 [Clipboard] Clipboard History Menu         →   \$mod+Shift+v|~/.local/bin/cliphist-menu"
-  "📷 [Screenshot] Full Screen Capture           →   Print|~/.local/bin/screenshot full"
-  "📷 [Screenshot] Area / Window Crop            →   Shift+Print|~/.local/bin/screenshot area"
-  "🌙 [EyeCare] Toggle Night Light               →   nightlight toggle|~/.local/bin/nightlight toggle"
-  "🧘 [Wellbeing] Digital Wellbeing Status       →   sway-wellbeing|foot -e ~/.local/bin/sway-wellbeing status"
-  "🌐 [Web] Chromium Browser                     →   \$mod+b|chromium"
-  "📁 [Files] Thunar File Manager                →   thunar|thunar"
+  "🎓 Xournal++     │ Annotate lecture PDFs, handwriting & sign forms       │ Hotkey: \$mod+p  •  CLI: xournalpp|xournalpp"
+  "📑 PDF Arranger  │ Visual drag & drop PDF page split, merge, rotate, crop │ Hotkey: \$mod+Shift+p  •  CLI: pdfarranger|pdfarranger"
+  "📷 Screen OCR    │ Select any screen area to extract and copy text        │ Hotkey: \$mod+Shift+o  •  Alt+Print|~/.local/bin/ocr-grab"
+  "🧮 Qalc (calc)   │ Symbolic math, physics units, calculus & currencies    │ Hotkey: \$mod+c  •  calc \"50 USD in INR\"|foot -e qalc"
+  "🔢 Galculator    │ Lightweight GTK scientific desktop calculator          │ Hotkey: \$mod+c  •  CLI: galculator|galculator"
+  "📱 Scrcpy        │ 60fps Android screen mirror & mouse/keyboard control   │ Hotkey: \$mod+a  (over USB or Wi-Fi)|scrcpy"
+  "📱 Share Wi-Fi   │ Drop files/folders to Android phone via terminal QR   │ Hotkey: \$mod+Ctrl+w  •  share-wifi|foot --app-id=share-wifi -e ~/.local/bin/share-wifi"
+  "📱 Debloater     │ Safely remove or disable vendor & carrier bloatware    │ Hotkey: \$mod+Alt+a  •  uad-ng|uad-ng"
+  "💾 Disks (GUI)   │ Format USB (FAT32/exFAT/NTFS) & burn ISO to USB drive  │ Hotkey: \$mod+u  •  gnome-disks|gnome-disks"
+  "💾 Ventoy        │ Multi-boot USB engine: drag-and-drop multiple ISOs     │ Hotkey: \$mod+Shift+u  •  ventoygui|ventoygui"
+  "💾 GDU Storage   │ Interactive, arrow-key disk space usage explorer       │ Hotkey: \$mod+Ctrl+d  •  gdu ~|foot --app-id=gdu -e gdu ~"
+  "🎨 Pinta         │ Fast image editor for cropping, retouch & layers       │ Hotkey: \$mod+i  •  CLI: pinta|pinta"
+  "📝 Mousepad      │ Fast GUI tabbed text editor with syntax highlighting   │ Hotkey: \$mod+m  •  CLI: mousepad|mousepad"
+  "📦 LazyGit       │ Visual TUI for Git: stage lines, branches, diffs       │ Hotkey: \$mod+g  •  CLI: lg|foot --app-id=lazygit -e lazygit"
+  "🗂️ Zoxide (z)    │ Smarter cd: learns habits and jumps directly to dirs   │ Command: z <folder> (e.g. z jam)|notify-send -a 'Zoxide' 'Smart Directory Jump' 'Use \"z <name>\" in terminal to jump directly to any folder.'"
+  "💡 Tealdeer      │ Real-world practical cheatsheets for any Linux command │ Command: tldr <cmd> (e.g. tldr tar)|foot -e bash -c 'echo \"Usage: tldr <command> (e.g., tldr tar, tldr adb)\"; exec bash'"
+  "🐍 UV Runner     │ Modern isolated runner for Python & AI scripts         │ Command: uv run <script.py>|foot -e bash -c 'echo \"Usage: uv run <script.py>\"; exec bash'"
+  "🔍 ShellCheck    │ Static analysis bug & syntax linter for bash scripts   │ Command: shellcheck <script>|foot -e bash -c 'echo \"Usage: shellcheck <script.sh>\"; exec bash'"
+  "🖥️ Btop Monitor  │ CPU, GPU, memory, processes & network monitor         │ Hotkey: \$mod+Escape  •  CLI: btop|foot --app-id=btop -e btop"
+  "📋 Cliphist      │ Searchable clipboard history manager menu              │ Hotkey: \$mod+Shift+v|~/.local/bin/cliphist-menu"
+  "📷 Satty Screen  │ Full screen or cropped screenshot with annotation     │ Hotkey: Print / Shift+Print|~/.local/bin/screenshot area"
+  "🌙 Night Light   │ Eye-care blue light reduction filter (wlsunset)        │ Hotkey: \$mod+n (toggle) • \$mod+Shift+n|~/.local/bin/nightlight toggle"
+  "🧘 Wellbeing     │ 20-20-20 eye strain reminder & screen time limiter     │ Hotkey: \$mod+Alt+e (menu)|~/.local/bin/sway-wellbeing menu"
+  "📁 Thunar        │ Graphical file manager with MTP Android phone browsing │ Hotkey: \$mod+Shift+f|thunar"
+  "📁 Yazi          │ Blazing-fast terminal file manager with image previews │ Hotkey: \$mod+Alt+f|foot --app-id=yazi -e yazi"
+  "🌐 Chromium      │ Fast native Wayland web browser                        │ Hotkey: \$mod+b|chromium"
+  "🔒 Swaylock      │ Secure Wayland session lock screen                     │ Hotkey: \$mod+Backspace / \$mod+Ctrl+l|swaylock"
 )
 
 LABELS=""
@@ -40,7 +44,7 @@ for entry in "${ENTRIES[@]}"; do
     LABELS+="${label}"$'\n'
 done
 
-SELECTED=$(echo -n "$LABELS" | wofi --conf "$CONF" --style "$STYLE" --dmenu --prompt "⚡ Cheatsheet HUD (\$mod+k)")
+SELECTED=$(echo -n "$LABELS" | wofi --conf "$CONF" --style "$STYLE" --dmenu --prompt "⚡ Utility Chart & Guide (\$mod+k)")
 
 if [[ -z "$SELECTED" ]]; then
     exit 0
