@@ -121,12 +121,12 @@ systemd-run --user --unit=phone-mount --collect \
         --vfs-cache-max-age 2h \
         --vfs-read-chunk-size 2M \
         --vfs-read-chunk-size-limit 64M \
-        --buffer-size 32M \
+        --buffer-size 0 \
         --no-modtime \
-        --dir-cache-time 1m \
-        --timeout 5s \
-        --contimeout 3s \
-        --low-level-retries 1 \
+        --dir-cache-time 5m \
+        --timeout 10s \
+        --contimeout 5s \
+        --low-level-retries 2 \
         --allow-non-empty \
         >/dev/null 2>&1
 
