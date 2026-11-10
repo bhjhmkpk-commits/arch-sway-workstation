@@ -20,7 +20,6 @@ ENTRIES=(
   "📱 Phone Storage │ Wireless phone storage in Thunar (Samsung style)       │ Hotkey: \$mod+Ctrl+m  •  phone-mount|~/.local/bin/phone-mount"
   "📱 Phone Clip    │ Wireless Phone <> PC 2-way clipboard bridge (QR code)  │ Hotkey: \$mod+Ctrl+p  •  phone-clip|foot --app-id=phone-clip -e ~/.local/bin/phone-clip"
   "📱 LocalSend     │ Open-source AirDrop: fast wireless file & text send    │ Hotkey: \$mod+Alt+l  •  localsend|localsend"
-  "📱 Share Wi-Fi   │ Drop files/folders to Android phone via terminal QR   │ Hotkey: \$mod+Ctrl+w  •  share-wifi|foot --app-id=share-wifi -e ~/.local/bin/share-wifi"
   "📱 Debloater     │ Safely remove or disable vendor & carrier bloatware    │ Hotkey: \$mod+Alt+a  •  uad-ng|uad-ng"
   "💾 Disks (GUI)   │ Format USB (FAT32/exFAT/NTFS) & burn ISO to USB drive  │ Hotkey: \$mod+u  •  gnome-disks|gnome-disks"
   "💾 Ventoy        │ Multi-boot USB engine: drag-and-drop multiple ISOs     │ Hotkey: \$mod+Shift+u  •  ventoygui|ventoygui"

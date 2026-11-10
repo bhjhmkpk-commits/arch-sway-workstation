@@ -61,7 +61,6 @@ ENTRIES=(
   "📱 [App] Phone <> PC Clipboard Bridge (Web QR)                →   \$mod + Ctrl + p|foot --app-id=phone-clip -e ~/.local/bin/phone-clip"
   "📱 [App] LocalSend (Cross-Platform AirDrop)                   →   \$mod + Alt + l|localsend"
   "📱 [App] Universal Android Debloater (UAD)                    →   \$mod + Alt + a|uad-ng"
-  "📱 [App] Wi-Fi File Drop via Terminal QR (Share-WiFi)         →   \$mod + Ctrl + w|foot --app-id=share-wifi -e ~/.local/bin/share-wifi"
   "🌐 [App] Webapp Manager Dashboard                             →   \$mod + Shift + a|~/.local/bin/webapp gui"
   "📺 [App] YouTube Web App                                      →   \$mod + Shift + y|chromium --app='https://youtube.com' --name='webapp-youtube' --class='WebApp-youtube'"
   "🎵 [App] YouTube Music Web App                                →   \$mod + Shift + m|chromium --app='https://music.youtube.com' --name='webapp-youtube-music' --class='WebApp-youtube-music'"

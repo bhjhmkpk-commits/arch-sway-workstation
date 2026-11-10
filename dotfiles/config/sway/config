@@ -75,7 +75,6 @@ bindsym $mod+Ctrl+d exec $term --app-id=gdu -e gdu ~
 # Android & Mobile Utilities
 bindsym $mod+a exec scrcpy
 bindsym $mod+Mod1+a exec uad-ng
-bindsym $mod+Ctrl+w exec $term --app-id=share-wifi -e ~/.local/bin/share-wifi
 bindsym $mod+Ctrl+m exec ~/.local/bin/phone-mount
 bindsym $mod+Ctrl+p exec $term --app-id=phone-clip -e ~/.local/bin/phone-clip
 bindsym $mod+Mod1+l exec localsend
@@ -180,5 +179,4 @@ for_window [app_id="viewnior"] floating enable
 for_window [app_id="xarchiver"] floating enable
 for_window [app_id=".*satty.*"] floating enable
 for_window [app_id="phone-clip"] floating enable, resize set 750 560
-for_window [app_id="share-wifi"] floating enable, resize set 750 520
 for_window [app_id="zenity"] floating enable

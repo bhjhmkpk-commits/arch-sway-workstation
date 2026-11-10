@@ -39,7 +39,6 @@
 | **Mobile**  | **Phone <> PC Clipboard Bridge** | **`$mod + Ctrl + p`** | 2-way phone & PC clipboard sync (Web QR, no app) |
 | **Mobile**  | **LocalSend (AirDrop style)** | **`$mod + Alt + l`** | 1-tap open-source wireless file & text share |
 | **Mobile**  | Universal Android Debloater | **`$mod + Alt + a`** | Safely remove pre-installed bloatware |
-| **Mobile**  | Wi-Fi File Drop (Share-WiFi) | **`$mod + Ctrl + w`** | Terminal QR code for wireless file sharing |
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
 | **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Shift + o`** or **`Alt + Print`** | Select any area → extracted text to clipboard |

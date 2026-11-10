@@ -31,7 +31,6 @@ ${Y}📱 2. ANDROID & MOBILE UTILITIES${RESET}
   ${C}\$mod + Ctrl + m${RESET} / ${C}phone-mount${RESET} Wireless phone storage in Thunar (Samsung style)
   ${C}\$mod + Ctrl + p${RESET} / ${C}phone-clip${RESET}  Wireless Phone <> PC 2-way clipboard bridge (QR code)
   ${C}\$mod + Alt + l${RESET}  / ${C}localsend${RESET}   Cross-device AirDrop (file & text sharing)
-  ${C}\$mod + Ctrl + w${RESET} / ${C}share-wifi${RESET}   Instant Wi-Fi file sharing via terminal QR code
   ${C}scrcpy${RESET}                    60fps Android screen mirror & mouse/keyboard control
   ${C}uad-ng${RESET}                    Universal Android Debloater (safe bloatware removal)
   ${C}Thunar${RESET}                    Plug phone via USB to browse internal storage (MTP)
