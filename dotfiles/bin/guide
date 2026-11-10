@@ -14,7 +14,7 @@ BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-cat << EOF
+printf '%b' "\
 ${G}================================================================================${RESET}
 ${BOLD}  🚀 Arch Sway Workstation - Quick Reference Guide${RESET}
 ${DIM}  Press ${BOLD}\$mod + k${RESET}${DIM} anywhere to open the Interactive Cheatsheet HUD & Launcher${RESET}
@@ -24,7 +24,7 @@ ${Y}🎓 1. STUDENT, ACADEMIC & DOCUMENTS${RESET}
   ${C}\$mod + Shift + o${RESET} / ${C}Alt + Print${RESET}  Instant Screen OCR (select area → copies text)
   ${C}Xournal++${RESET}                 PDF annotation, handwritten notes & form signing
   ${C}PDF Arranger${RESET}              Visual PDF drag-and-drop page split, merge & crop
-  ${C}calc "<expr>"${RESET}             Physics constants, units, calculus (${DIM}qalc "50 USD in INR"${RESET})
+  ${C}calc \"<expr>\"${RESET}             Physics constants, units, calculus (${DIM}qalc \"50 USD in INR\"${RESET})
   ${C}Calculator${RESET}                Scientific desktop calculator (${DIM}galculator${RESET})
 
 ${Y}📱 2. ANDROID & MOBILE UTILITIES${RESET}
@@ -61,4 +61,4 @@ ${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
   ${C}Print${RESET} / ${C}Shift + Print${RESET}      Full / cropped screenshot (${DIM}satty${RESET})
 
 ${G}================================================================================${RESET}
-EOF
+"
