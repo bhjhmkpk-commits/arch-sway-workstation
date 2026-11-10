@@ -82,9 +82,11 @@ fi
 
 notify-send -a "Phone Storage" -i phone "Mounting Phone Storage..." "$NORMALIZED_URI"
 
-# Mount via GVFS
-gio mount "$NORMALIZED_URI" 2>/dev/null || true
+# Mount via GVFS with anonymous auth flag so it never hangs for stdin credentials
+gio mount -a "$NORMALIZED_URI" 2>/dev/null || gio mount "$NORMALIZED_URI" 2>/dev/null || true
 
-# Open Thunar at the phone storage location
+# Open Thunar at the phone storage location and focus its window/workspace
 thunar "$NORMALIZED_URI" &
+sleep 0.3
+swaymsg '[app_id="thunar"] focus' 2>/dev/null || true
 exit 0
