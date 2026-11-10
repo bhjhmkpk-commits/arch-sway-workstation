@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# 📱 Arch Sway Workstation - Wireless Phone <> PC Clipboard Bridge
+# Serves an Everforest-themed mobile web card with QR code.
+# NO APPS REQUIRED ON PHONE! Works in any mobile browser.
+# ==============================================================================
+
+import http.server
+import json
+import socket
+import subprocess
+import sys
+import urllib.parse
+
+PORT = 8088
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("1.1.1.1", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+def get_clipboard():
+    try:
+        return subprocess.check_output(["wl-paste"]).decode("utf-8", errors="ignore")
+    except Exception:
+        return ""
+
+def set_clipboard(text):
+    try:
+        p = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE)
+        p.communicate(input=text.encode("utf-8"))
+        preview = text[:80].replace("\n", " ")
+        subprocess.run(["notify-send", "-a", "Phone Clipboard", "-i", "edit-paste", "Copied from Phone", f"{preview}..."])
+    except Exception as e:
+        print("Error setting clipboard:", e)
+
+HTML_PAGE = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📱 Phone <> PC Clipboard</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background: #1e2a24; color: #e6e2d8; margin: 0; padding: 20px; }
+  .card { background: #283b32; border: 1px solid #36453b; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  h2 { margin-top: 0; font-size: 17px; color: #b0d288; }
+  textarea { width: 100%; box-sizing: border-box; background: #1e2a24; border: 1px solid #36453b; border-radius: 8px; color: #e6e2d8; padding: 12px; font-size: 16px; min-height: 110px; resize: vertical; }
+  button { width: 100%; background: #a7c080; color: #1e2a24; border: none; border-radius: 8px; padding: 14px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+  button:active { background: #8fcaa0; }
+  .received-box { background: #1e2a24; border: 1px solid #36453b; border-radius: 8px; padding: 12px; font-size: 15px; word-break: break-all; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #f2ede4; }
+  .badge { display: inline-block; background: #36453b; color: #a7c080; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
+  .status { color: #a7c080; text-align: center; margin-top: 10px; font-size: 14px; font-weight: bold; display: none; }
+</style>
+</head>
+<body>
+  <div style="text-align: center; margin-bottom: 16px;">
+    <span class="badge">WI-FI CLIPBOARD BRIDGE</span>
+    <h1 style="font-size: 20px; margin: 4px 0; color: #e6e2d8;">📱 Phone &lt;&gt; Laptop</h1>
+  </div>
+
+  <div class="card">
+    <h2>📥 Received from Laptop Clipboard:</h2>
+    <div class="received-box" id="pc-clip">{CURRENT_CLIP}</div>
+    <button onclick="copyToPhone()">📋 Copy to Phone Clipboard</button>
+    <div id="copy-status" class="status">✓ Copied to Phone Clipboard!</div>
+  </div>
+
+  <div class="card">
+    <h2>📤 Send to Laptop Clipboard:</h2>
+    <textarea id="phone-input" placeholder="Paste or type text here to send to your laptop..."></textarea>
+    <button onclick="sendToPC()">🚀 Send to Laptop</button>
+    <div id="send-status" class="status">✓ Sent to Laptop Clipboard!</div>
+  </div>
+
+  <script>
+    function copyToPhone() {
+      const text = document.getElementById('pc-clip').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const s = document.getElementById('copy-status');
+        s.style.display = 'block';
+        setTimeout(() => s.style.display = 'none', 2500);
+      });
+    }
+
+    function sendToPC() {
+      const text = document.getElementById('phone-input').value;
+      if (!text) return;
+      fetch('/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+      }).then(r => r.json()).then(data => {
+        const s = document.getElementById('send-status');
+        s.style.display = 'block';
+        document.getElementById('phone-input').value = '';
+        setTimeout(() => s.style.display = 'none', 2500);
+      });
+    }
+  </script>
+</body>
+</html>
+"""
+
+class ClipHandler(http.server.BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+    def do_GET(self):
+        if self.path == "/" or self.path == "/index.html":
+            clip = get_clipboard()
+            safe_clip = clip.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+            page = HTML_PAGE.replace("{CURRENT_CLIP}", safe_clip)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(page.encode("utf-8"))
+        elif self.path == "/get":
+            clip = get_clipboard()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"clipboard": clip}).encode("utf-8"))
+        else:
+            self.send_error(404)
+
+    def do_POST(self):
+        if self.path == "/send":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length).decode("utf-8", errors="ignore")
+            try:
+                data = json.loads(body)
+                text = data.get("text", "")
+                if text:
+                    set_clipboard(text)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "ok"}).encode("utf-8"))
+                    return
+            except Exception:
+                pass
+            self.send_error(400)
+
+def main():
+    ip = get_local_ip()
+    url = f"http://{ip}:{PORT}"
+    print("===================================================================")
+    print("  📱 Wireless Phone <> PC Clipboard Bridge")
+    print(f"  🔗 Local URL: {url}")
+    print("  Scan QR with phone camera (NO apps needed on phone!):")
+    print("===================================================================\n")
+    subprocess.run(["qrencode", "-t", "ansiutf8", url])
+    print("\nPress Ctrl+C to stop sharing.\n")
+    
+    server = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), ClipHandler)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nStopped.")
+
+if __name__ == "__main__":
+    main()

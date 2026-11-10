@@ -49,7 +49,7 @@ usbutils
 dosfstools
 exfatprogs
 ntfs-3g
-ventoy-bin
+sshfs
 
 # Mobile & Android Management
 android-tools

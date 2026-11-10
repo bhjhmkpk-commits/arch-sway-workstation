@@ -127,20 +127,25 @@ echo -e "\n${BLUE}⚡ Step 6/7: Activating user systemd services...${NC}"
 systemctl --user daemon-reload
 systemctl --user enable cliphist.service swayidle.service sway-wellbeing.service 2>/dev/null || true
 
-# 10. Optional AUR Package: Brave Browser
-echo -e "\n${YELLOW}🌐 Step 7/7: Optional Applications (Brave Browser)${NC}"
+# 10. Install AUR Packages (Ventoy, UAD, LocalSend, Brave)
+echo -e "\n${YELLOW}📦 Step 7/8: Installing AUR Packages...${NC}"
+if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
+    echo -e "${BLUE}Installing yay-bin AUR helper...${NC}"
+    TEMP_AUR=$(mktemp -d)
+    git clone https://aur.archlinux.org/yay-bin.git "$TEMP_AUR/yay-bin"
+    (cd "$TEMP_AUR/yay-bin" && makepkg -si --noconfirm)
+    rm -rf "$TEMP_AUR"
+fi
+AUR_CMD="yay"
+command -v paru &>/dev/null && AUR_CMD="paru"
+
+if [ -f "$SCRIPT_DIR/packages-aur.txt" ]; then
+    AUR_PKGS=$(grep -E -v '^(#|$)' "$SCRIPT_DIR/packages-aur.txt" | tr '\n' ' ')
+    $AUR_CMD -S --needed --noconfirm $AUR_PKGS || true
+fi
+
 read -rp "Would you like to install Brave Browser via AUR? (y/N): " INSTALL_BRAVE
 if [[ "$INSTALL_BRAVE" =~ ^[Yy]$ ]]; then
-    if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
-        echo -e "${BLUE}Installing yay-bin AUR helper...${NC}"
-        TEMP_AUR=$(mktemp -d)
-        git clone https://aur.archlinux.org/yay-bin.git "$TEMP_AUR/yay-bin"
-        (cd "$TEMP_AUR/yay-bin" && makepkg -si --noconfirm)
-        rm -rf "$TEMP_AUR"
-    fi
-    AUR_CMD="yay"
-    command -v paru &>/dev/null && AUR_CMD="paru"
-    
     echo -e "${BLUE}Attempting to install brave-origin-bin (minimalist edition)...${NC}"
     if ! $AUR_CMD -S --needed --noconfirm brave-origin-bin; then
         echo -e "${YELLOW}Notice: brave-origin-bin upstream download failed. Falling back to brave-bin...${NC}"
@@ -152,7 +157,7 @@ else
 fi
 
 # 11. Minimal TUI Login Manager (greetd + tuigreet)
-echo -e "\n${BLUE}🔒 Step 7/7: Configuring minimal tuigreet login manager...${NC}"
+echo -e "\n${BLUE}🔒 Step 8/8: Configuring minimal tuigreet login manager...${NC}"
 sudo mkdir -p /etc/greetd
 sudo tee /etc/greetd/config.toml > /dev/null <<EOF
 [terminal]
@@ -169,22 +174,30 @@ echo -e "${GREEN}✓ Minimal tuigreet login manager configured and enabled!${NC}
 echo -e "\n${BLUE}🛡️ Configuring host firewall (UFW)...${NC}"
 sudo ufw default deny incoming >/dev/null 2>&1 || true
 sudo ufw default allow outgoing >/dev/null 2>&1 || true
+sudo ufw allow 53317/tcp comment 'LocalSend file transfer' >/dev/null 2>&1 || true
+sudo ufw allow 53317/udp comment 'LocalSend discovery' >/dev/null 2>&1 || true
+sudo ufw allow 8088/tcp comment 'Phone Clipboard Bridge' >/dev/null 2>&1 || true
 sudo ufw --force enable >/dev/null 2>&1 || true
 sudo systemctl enable ufw.service >/dev/null 2>&1 || true
-echo -e "${GREEN}✓ Host firewall active (deny incoming, allow outgoing)!${NC}"
+echo -e "${GREEN}✓ Host firewall active with LocalSend & Phone Clip ports open!${NC}"
 
 echo -e "\n${GREEN}=================================================================${NC}"
 echo -e "${GREEN}  🎉 Arch Sway Workstation Installation Complete!               ${NC}"
 echo -e "${GREEN}=================================================================${NC}"
 echo -e "Start Sway immediately by running: ${BOLD}${YELLOW}sway${NC} or reboot your system."
 echo -e "\nEssential Keybindings:"
+echo -e "  • Super + k              : Interactive Utility Chart & Guide"
+echo -e "  • Super + /              : Searchable Keybinding Finder"
+echo -e "  • Super + c / v          : Universal Copy / Paste across all apps"
+echo -e "  • Super + Ctrl + m       : Phone Storage in Thunar (Samsung style)"
+echo -e "  • Super + Ctrl + p       : Phone <> PC Clipboard Bridge (QR code)"
 echo -e "  • Super + Enter          : Foot Terminal"
 echo -e "  • Super + Space / D      : Wofi Application Menu"
 echo -e "  • Super + Shift + F      : Thunar File Manager"
 echo -e "  • Super + B              : Chromium Web Browser"
-echo -e "  • Super + Shift + B      : Brave Origin (if installed)"
 echo -e "  • Print / Shift + Print  : Screenshot & Annotation (Satty)"
-echo -e "  • Super + Shift + V      : Clipboard History (with Clear button)"
+echo -e "  • Super + Shift + O      : Instant Screen OCR to Clipboard"
+echo -e "  • Super + Shift + V      : Clipboard History Menu"
 echo -e "  • Super + Escape         : System Monitor (btop)"
 echo -e "  • Super + Alt + E        : Wellbeing & Eye Care Menu"
 echo -e "  • Super + W              : Close Window"

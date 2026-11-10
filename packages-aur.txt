@@ -1,0 +1,4 @@
+# Arch Sway Workstation - AUR Packages
+ventoy-bin
+universal-android-debloater-bin
+localsend-bin

@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📱 Arch Sway Workstation - Wireless Phone Storage Mount (Thunar)
+# Connects to Android FTP/SFTP server over local Wi-Fi with 1 click
+# 0 MB idle RAM, native GVFS / Thunar integration.
+# ==============================================================================
+
+CONFIG_FILE="$HOME/.config/phone-mount.conf"
+DEFAULT_URI="ftp://192.168.1.15:2121"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    SAVED_URI=$(cat "$CONFIG_FILE" 2>/dev/null)
+    [[ -n "$SAVED_URI" ]] && DEFAULT_URI="$SAVED_URI"
+fi
+
+if [[ "$1" == "-u" || "$1" == "--unmount" ]]; then
+    if [[ -n "$SAVED_URI" ]]; then
+        gio mount -u "$SAVED_URI" 2>/dev/null || true
+        notify-send -a "Phone Storage" -i phone "Phone Unmounted" "Disconnected from $SAVED_URI"
+    fi
+    exit 0
+elif [[ -n "$1" ]]; then
+    RAW_URI="$1"
+elif [ -n "$WAYLAND_DISPLAY" ] && command -v zenity >/dev/null 2>&1; then
+    RAW_URI=$(zenity --entry \
+        --title="📱 Wireless Phone Storage (Thunar)" \
+        --text="1. Tap 'Start Server' on your phone (Material Files / Cx Explorer)\n2. Enter Phone address:" \
+        --entry-text="$DEFAULT_URI" 2>/dev/null)
+else
+    read -rp "Enter Phone Server URI [$DEFAULT_URI]: " RAW_URI
+    RAW_URI="${RAW_URI:-$DEFAULT_URI}"
+fi
+
+[[ -z "$RAW_URI" ]] && exit 0
+
+# Normalize URI and extract host & port using Python
+PARSED=$(python3 -c "
+import urllib.parse, sys
+uri = sys.argv[1].strip()
+if '://' not in uri:
+    uri = 'ftp://' + uri
+u = urllib.parse.urlsplit(uri)
+scheme = u.scheme or 'ftp'
+port = u.port or (2222 if scheme == 'sftp' else 2121)
+hostname = u.hostname or '127.0.0.1'
+auth = ''
+if u.username:
+    auth = f'{u.username}:{u.password}@' if u.password else f'{u.username}@'
+path = u.path or '/'
+full_uri = f'{scheme}://{auth}{hostname}:{port}{path}'
+print(f'{hostname} {port} {full_uri}')
+" "$RAW_URI" 2>/dev/null)
+
+read -r HOST PORT NORMALIZED_URI <<< "$PARSED"
+
+if [[ -z "$HOST" || -z "$PORT" || -z "$NORMALIZED_URI" ]]; then
+    notify-send -u critical -a "Phone Storage" -i dialog-error "Invalid Address" "Could not parse '$RAW_URI'."
+    exit 1
+fi
+
+echo "$NORMALIZED_URI" > "$CONFIG_FILE"
+
+# Preflight socket check (1.5s timeout) to ensure phone server is responsive
+IS_REACHABLE=$(python3 -c "
+import socket, sys
+try:
+    s = socket.socket()
+    s.settimeout(1.5)
+    s.connect(('$HOST', int('$PORT')))
+    s.close()
+    print('OK')
+except Exception:
+    print('FAIL')
+" 2>/dev/null)
+
+if [[ "$IS_REACHABLE" != "OK" ]]; then
+    notify-send -u critical -a "Phone Storage" -i network-error \
+        "Phone Server Unreachable" \
+        "Could not connect to $HOST:$PORT.\n\n✓ Make sure your phone and laptop are on the SAME Wi-Fi.\n✓ Make sure 'Start Server' is active in your phone's file manager app."
+    exit 1
+fi
+
+notify-send -a "Phone Storage" -i phone "Mounting Phone Storage..." "$NORMALIZED_URI"
+
+# Mount via GVFS
+gio mount "$NORMALIZED_URI" 2>/dev/null || true
+
+# Open Thunar at the phone storage location
+thunar "$NORMALIZED_URI" &
+exit 0

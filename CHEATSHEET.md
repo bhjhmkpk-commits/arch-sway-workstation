@@ -35,6 +35,9 @@
 | **USB**     | Multi-Boot USB Engine (Ventoy) | **`$mod + Shift + u`** | Drag-and-drop multiple bootable ISOs |
 | **Disk**    | Interactive Storage Explorer | **`$mod + Ctrl + d`** | Arrow-key terminal storage usage (`gdu ~`) |
 | **Mobile**  | Android Screen Mirror (Scrcpy)| **`$mod + a`** | 60fps low-latency mirror & PC control |
+| **Mobile**  | **Phone Storage in Thunar** | **`$mod + Ctrl + m`** | Wireless phone storage in Thunar (Samsung style) |
+| **Mobile**  | **Phone <> PC Clipboard Bridge** | **`$mod + Ctrl + p`** | 2-way phone & PC clipboard sync (Web QR, no app) |
+| **Mobile**  | **LocalSend (AirDrop style)** | **`$mod + Alt + l`** | 1-tap open-source wireless file & text share |
 | **Mobile**  | Universal Android Debloater | **`$mod + Alt + a`** | Safely remove pre-installed bloatware |
 | **Mobile**  | Wi-Fi File Drop (Share-WiFi) | **`$mod + Ctrl + w`** | Terminal QR code for wireless file sharing |
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
@@ -59,3 +62,35 @@
 | **Layout**  | Stacking / Tabbed Layout | **`$mod + s`** / **`$mod + Shift + w`** | Tabbed or stacked container views |
 | **Workspaces**| Switch Workspace 1–10 | **`$mod + 1 .. 0`** | Instant workspace switching |
 | **Workspaces**| Move Container to Workspace | **`$mod + Shift + 1 .. 0`** | Move window to target workspace |
+
+---
+
+## 📱 Wireless Phone <> PC Integration (0 MB Idle RAM)
+
+### 1. View & Browse Whole Phone Storage in Thunar (Wirelessly)
+* **How it works:** Uses Thunar's native GVFS network backend over your local Wi-Fi. 0 persistent background daemons, 0 MB idle RAM.
+* **On Phone (One-time):**
+  1. Install any modern Android file manager with built-in Wi-Fi sharing (e.g. **Material Files** from F-Droid/Play Store, or **Cx File Explorer**, or **Solid Explorer**).
+  2. Open the app and tap **"Start FTP Server"** (or "Access from network").
+  3. Note the local address shown on your phone screen (e.g., `ftp://192.168.1.15:2121`).
+* **On Laptop:**
+  1. Press **`$mod + Ctrl + m`** (or run `phone-mount` in terminal).
+  2. Enter the phone's address (it remembers it next time, so you only press Enter).
+  3. **Done!** Thunar instantly opens your entire phone internal storage (DCIM, Downloads, Documents, Music, Android, etc.) right in the file manager sidebar, exactly like Samsung Quick Share or Link to Windows!
+  4. *Pro-Tip:* Right-click the folder in Thunar and select **"Add Bookmark"** — from then on, you can simply click it in Thunar's sidebar anytime your phone server is on!
+
+### 2. 1-Click Clipboard Sharing Between Phone & Laptop
+We provide two zero-bloat paths:
+
+#### Option A: Zero Apps Needed on Phone (`phone-clip`)
+* **On Laptop:** Press **`$mod + Ctrl + p`**. A terminal card with a local QR code pops up.
+* **On Phone:** Open camera or QR scanner and tap the link (e.g., `http://192.168.1.15:8088`).
+* **What you see on phone:**
+  - **📥 Current Laptop Clipboard:** Tap **"📋 Copy to Phone Clipboard"** to immediately paste on your phone.
+  - **📤 Send to Laptop:** Paste or type text on phone and tap **"🚀 Send to Laptop"**. It instantly populates your Arch Sway clipboard (`wl-copy`) and shows a desktop notification preview!
+
+#### Option B: 1-Tap Native Share Menu (`LocalSend`)
+* **On Laptop:** Press **`$mod + Alt + l`** (launches `localsend`).
+* **On Phone:** Install **LocalSend** (F-Droid / Play Store).
+* **Usage:** Highlight any text or select any photo on your phone, tap **Share → LocalSend → Arch Laptop**. Transferred in less than 1 second!
+

@@ -28,7 +28,10 @@ ${Y}🎓 1. STUDENT, ACADEMIC & DOCUMENTS${RESET}
   ${C}Calculator${RESET}                Scientific desktop calculator (${DIM}galculator${RESET})
 
 ${Y}📱 2. ANDROID & MOBILE UTILITIES${RESET}
-  ${C}share-wifi [file]${RESET}         Instant Wi-Fi file sharing via terminal QR code
+  ${C}\$mod + Ctrl + m${RESET} / ${C}phone-mount${RESET} Wireless phone storage in Thunar (Samsung style)
+  ${C}\$mod + Ctrl + p${RESET} / ${C}phone-clip${RESET}  Wireless Phone <> PC 2-way clipboard bridge (QR code)
+  ${C}\$mod + Alt + l${RESET}  / ${C}localsend${RESET}   Cross-device AirDrop (file & text sharing)
+  ${C}\$mod + Ctrl + w${RESET} / ${C}share-wifi${RESET}   Instant Wi-Fi file sharing via terminal QR code
   ${C}scrcpy${RESET}                    60fps Android screen mirror & mouse/keyboard control
   ${C}uad-ng${RESET}                    Universal Android Debloater (safe bloatware removal)
   ${C}Thunar${RESET}                    Plug phone via USB to browse internal storage (MTP)
@@ -52,7 +55,10 @@ ${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
   ${C}\$mod + d${RESET} / ${C}\$mod + Space${RESET}     Application launcher (${DIM}Wofi${RESET})
   ${C}\$mod + Return${RESET}            Terminal (${DIM}foot${RESET})
   ${C}\$mod + Alt + Return${RESET}      Terminal Workspace (${DIM}tmux${RESET})
+  ${C}\$mod + c${RESET}                 Universal Copy (Terminal & all GUI apps)
+  ${C}\$mod + v${RESET}                 Universal Paste (Terminal & all GUI apps)
   ${C}\$mod + Shift + v${RESET}         Clipboard history menu (${DIM}cliphist${RESET})
+  ${C}\$mod + /${RESET} / ${C}\$mod + ?${RESET}         Complete searchable keybinding finder (${DIM}keysheet${RESET})
   ${C}\$mod + Escape${RESET}            Task & resource monitor (${DIM}btop${RESET})
   ${C}\$mod + b${RESET}                 Chromium browser
   ${C}\$mod + w${RESET}                 Close focused window
