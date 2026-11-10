@@ -163,7 +163,7 @@ bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+Shift+0 move container to workspace number 10
 
 # ── 9. Status Bar & Autostart Daemons ─────────────────────────────────────────
-exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway SWAYSOCK
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP=sway SWAYSOCK
 exec_always /home/bohar/.local/bin/waybar-run
 exec_always mako
 exec lxpolkit
@@ -182,3 +182,4 @@ for_window [app_id="xarchiver"] floating enable
 for_window [app_id=".*satty.*"] floating enable
 for_window [app_id="phone-clip"] floating enable, resize set 750 560
 for_window [app_id="zenity"] floating enable
+for_window [class="Ventoy2Disk.gtk3"] floating enable

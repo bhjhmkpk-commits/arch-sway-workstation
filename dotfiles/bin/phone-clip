@@ -5,7 +5,6 @@
 # Zero apps required on phone! Works in any mobile browser.
 # ==============================================================================
 
-import cgi
 import http.server
 import json
 import os
@@ -217,12 +216,11 @@ HTML_PAGE = """<!DOCTYPE html>
     function uploadPhoto(input) {
       if (!input.files || !input.files[0]) return;
       const file = input.files[0];
-      const formData = new FormData();
-      formData.append("photo", file);
       showToast("Uploading photo to laptop...");
       fetch('/upload-photo', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': file.type || 'image/png' },
+        body: file
       }).then(r => r.json()).then(data => {
         showToast("✓ Photo pasted to Laptop Clipboard!");
         input.value = "";
@@ -285,18 +283,15 @@ class SyncHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(400)
         elif self.path == "/upload-photo":
             try:
-                ctype, pdict = cgi.parse_header(self.headers.get('content-type', ''))
-                if ctype == 'multipart/form-data':
-                    pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-                    fields = cgi.parse_multipart(self.rfile, pdict)
-                    photos = fields.get('photo', [])
-                    if photos and len(photos) > 0:
-                        set_laptop_clipboard_image(photos[0])
-                        self.send_response(200)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps({"status": "ok"}).encode("utf-8"))
-                        return
+                length = int(self.headers.get("Content-Length", 0))
+                if length > 0:
+                    image_bytes = self.rfile.read(length)
+                    set_laptop_clipboard_image(image_bytes)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "ok"}).encode("utf-8"))
+                    return
             except Exception as e:
                 print("Error in upload-photo:", e)
             self.send_error(400)
