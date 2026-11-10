@@ -14,6 +14,7 @@ ENTRIES=(
   "📷 Screen OCR    │ Select any screen area to extract and copy text        │ Hotkey: \$mod+Shift+o  •  Alt+Print|~/.local/bin/ocr-grab"
   "📋 Universal Copy│ Instant copy across terminal & GUI apps                │ Hotkey: \$mod+c  •  Ctrl+Shift+C in terminal|~/.local/bin/universal-copy"
   "📋 Universal Paste│ Instant paste across terminal & GUI apps               │ Hotkey: \$mod+v  •  Ctrl+Shift+V in terminal|~/.local/bin/universal-paste"
+  "📋 Push to Phone │ Send laptop clipboard (text/photo) to phone bridge     │ Hotkey: \$mod+Ctrl+c  •  clip-push|~/.local/bin/clip-push"
   "🧮 Qalc (calc)   │ Symbolic math, physics units, calculus & currencies    │ Command: calc \"50 USD in INR\" • Hotkey: \$mod+=|foot -e qalc"
   "🔢 Galculator    │ Lightweight GTK scientific desktop calculator          │ Hotkey: \$mod+=  •  CLI: galculator|galculator"
   "📱 Scrcpy        │ 60fps Android screen mirror & mouse/keyboard control   │ Hotkey: \$mod+a  (over USB or Wi-Fi)|scrcpy"

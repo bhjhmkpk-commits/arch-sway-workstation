@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # ==============================================================================
-# 📱 Arch Sway Workstation - Wireless Phone <> PC Clipboard Bridge
-# Serves an Everforest-themed mobile web card with QR code.
-# NO APPS REQUIRED ON PHONE! Works in any mobile browser.
+# 📱 Arch Sway Workstation - Wireless Phone <> PC Clipboard & Media Bridge
+# Supports 2-way text sync AND photos/images with 1 tap.
+# Zero apps required on phone! Works in any mobile browser.
 # ==============================================================================
 
+import cgi
 import http.server
 import json
+import os
 import socket
 import subprocess
 import sys
-import urllib.parse
+import time
 
 PORT = 8088
+IMAGE_CACHE = "/tmp/phone_clip_image.png"
 
 def get_local_ip():
     try:
@@ -24,107 +27,242 @@ def get_local_ip():
     except Exception:
         return "127.0.0.1"
 
-def get_clipboard():
+def get_laptop_clipboard():
     try:
-        return subprocess.check_output(["wl-paste"]).decode("utf-8", errors="ignore")
+        types = subprocess.check_output(["wl-paste", "-l"], stderr=subprocess.DEVNULL).decode("utf-8", errors="ignore")
+        if "image/png" in types or "image/jpeg" in types:
+            img_bytes = subprocess.check_output(["wl-paste", "-t", "image/png"], stderr=subprocess.DEVNULL)
+            with open(IMAGE_CACHE, "wb") as f:
+                f.write(img_bytes)
+            return {"type": "image", "content": "/clip/image", "size": len(img_bytes)}
+        else:
+            text = subprocess.check_output(["wl-paste"], stderr=subprocess.DEVNULL).decode("utf-8", errors="ignore")
+            return {"type": "text", "content": text}
     except Exception:
-        return ""
+        return {"type": "text", "content": ""}
 
-def set_clipboard(text):
+def set_laptop_clipboard(text):
     try:
         p = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE)
         p.communicate(input=text.encode("utf-8"))
         preview = text[:80].replace("\n", " ")
-        subprocess.run(["notify-send", "-a", "Phone Clipboard", "-i", "edit-paste", "Copied from Phone", f"{preview}..."])
+        subprocess.run(["notify-send", "-a", "Phone Sync", "-i", "edit-paste", "Copied from Phone", f"{preview}..."])
     except Exception as e:
         print("Error setting clipboard:", e)
 
+def set_laptop_clipboard_image(image_bytes):
+    try:
+        save_dir = os.path.expanduser("~/Pictures/Screenshots")
+        os.makedirs(save_dir, exist_ok=True)
+        filename = f"phone_photo_{int(time.time())}.png"
+        filepath = os.path.join(save_dir, filename)
+        with open(filepath, "wb") as f:
+            f.write(image_bytes)
+
+        p = subprocess.Popen(["wl-copy", "-t", "image/png"], stdin=subprocess.PIPE)
+        p.communicate(input=image_bytes)
+        subprocess.run(["notify-send", "-a", "Phone Sync", "-i", "camera-photo", "Photo Received from Phone!", f"Copied to clipboard & saved to {filename}"])
+    except Exception as e:
+        print("Error saving image from phone:", e)
+
 HTML_PAGE = """<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>📱 Phone <> PC Clipboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>📱 Phone &lt;&gt; Laptop Sync</title>
 <style>
-  body { font-family: -apple-system, system-ui, sans-serif; background: #1e2a24; color: #e6e2d8; margin: 0; padding: 20px; }
-  .card { background: #283b32; border: 1px solid #36453b; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-  h2 { margin-top: 0; font-size: 17px; color: #b0d288; }
-  textarea { width: 100%; box-sizing: border-box; background: #1e2a24; border: 1px solid #36453b; border-radius: 8px; color: #e6e2d8; padding: 12px; font-size: 16px; min-height: 110px; resize: vertical; }
-  button { width: 100%; background: #a7c080; color: #1e2a24; border: none; border-radius: 8px; padding: 14px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-  button:active { background: #8fcaa0; }
-  .received-box { background: #1e2a24; border: 1px solid #36453b; border-radius: 8px; padding: 12px; font-size: 15px; word-break: break-all; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #f2ede4; }
-  .badge { display: inline-block; background: #36453b; color: #a7c080; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
-  .status { color: #a7c080; text-align: center; margin-top: 10px; font-size: 14px; font-weight: bold; display: none; }
+  :root {
+    --bg: #1e2326;
+    --card: #272e33;
+    --border: #3c4841;
+    --green: #a7c080;
+    --text: #d3c6aa;
+    --text-bright: #e6e2d8;
+    --blue: #7fbbb3;
+    --red: #e67e80;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; -webkit-font-smoothing: antialiased; }
+  .header { text-align: center; margin-bottom: 20px; }
+  .badge { display: inline-block; background: #323d43; color: var(--green); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: bold; letter-spacing: 0.5px; border: 1px solid var(--border); }
+  h1 { font-size: 20px; margin: 8px 0 2px 0; color: var(--text-bright); }
+  .subtitle { font-size: 13px; color: #859289; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  h2 { margin-top: 0; font-size: 15px; color: var(--green); display: flex; align-items: center; gap: 8px; }
+  .btn { width: 100%; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.15s; margin-top: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn:active { transform: scale(0.98); }
+  .btn-green { background: var(--green); color: #1e2326; }
+  .btn-blue { background: var(--blue); color: #1e2326; }
+  .btn-secondary { background: #323d43; color: var(--text-bright); border: 1px solid var(--border); font-size: 14px; padding: 10px; }
+  .content-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 14px; word-break: break-all; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: var(--text-bright); margin-top: 8px; }
+  textarea { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text-bright); padding: 12px; font-size: 14px; min-height: 80px; resize: vertical; margin-top: 8px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--green); color: #1e2326; padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; z-index: 100; }
+  img.preview { max-width: 100%; max-height: 160px; border-radius: 8px; display: block; margin: 8px auto; border: 1px solid var(--border); }
+  .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; margin-top: 10px; }
+  .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 </style>
 </head>
 <body>
-  <div style="text-align: center; margin-bottom: 16px;">
-    <span class="badge">WI-FI CLIPBOARD BRIDGE</span>
-    <h1 style="font-size: 20px; margin: 4px 0; color: #e6e2d8;">📱 Phone &lt;&gt; Laptop</h1>
+  <div class="header">
+    <span class="badge">● LIVE WI-FI BRIDGE</span>
+    <h1>📱 Phone &lt;&gt; Workstation</h1>
+    <div class="subtitle">1-Tap 2-Way Clipboard &amp; Media Sync</div>
   </div>
 
+  <!-- CARD 1: GET FROM LAPTOP -->
   <div class="card">
-    <h2>📥 Received from Laptop Clipboard:</h2>
-    <div class="received-box" id="pc-clip">{CURRENT_CLIP}</div>
-    <button onclick="copyToPhone()">📋 Copy to Phone Clipboard</button>
-    <div id="copy-status" class="status">✓ Copied to Phone Clipboard!</div>
+    <h2>📥 Received from Laptop</h2>
+    <div id="content-container">
+      <div class="content-box" id="pc-clip">Loading...</div>
+    </div>
+    <button class="btn btn-green" onclick="copyToPhone()">📋 Copy to Phone Clipboard</button>
   </div>
 
+  <!-- CARD 2: SEND TO LAPTOP -->
   <div class="card">
-    <h2>📤 Send to Laptop Clipboard:</h2>
-    <textarea id="phone-input" placeholder="Paste or type text here to send to your laptop..."></textarea>
-    <button onclick="sendToPC()">🚀 Send to Laptop</button>
-    <div id="send-status" class="status">✓ Sent to Laptop Clipboard!</div>
+    <h2>📤 Send to Laptop</h2>
+    <button class="btn btn-blue" onclick="sendPhoneClipToPC()">🚀 1-Tap: Send Phone Clipboard</button>
+    <div style="text-align: center; margin: 10px 0 4px 0; font-size: 12px; color: #859289;">— OR TYPE MANUALLY —</div>
+    <textarea id="manual-text" placeholder="Type or paste custom text here..."></textarea>
+    <button class="btn btn-secondary" onclick="sendManualText()">Send Custom Text</button>
+    
+    <div style="text-align: center; margin: 12px 0 4px 0; font-size: 12px; color: #859289;">— SEND PHOTO TO LAPTOP CLIPBOARD —</div>
+    <div class="file-input-wrapper">
+      <button class="btn btn-secondary">📷 Select / Snap Photo to Send</button>
+      <input type="file" accept="image/*" onchange="uploadPhoto(this)">
+    </div>
   </div>
+
+  <div id="toast" class="toast">✓ Copied!</div>
 
   <script>
-    function copyToPhone() {
-      const text = document.getElementById('pc-clip').innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        const s = document.getElementById('copy-status');
-        s.style.display = 'block';
-        setTimeout(() => s.style.display = 'none', 2500);
-      });
+    let currentClipText = "";
+    let isImage = false;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 2200);
     }
 
-    function sendToPC() {
-      const text = document.getElementById('phone-input').value;
+    function refreshLaptopClip() {
+      fetch('/clip')
+        .then(r => r.json())
+        .then(data => {
+          const container = document.getElementById('content-container');
+          if (data.type === 'image') {
+            isImage = true;
+            container.innerHTML = '<img class="preview" src="/clip/image?t=' + Date.now() + '"><div style="text-align:center;font-size:12px;color:#a7c080;">Photo in laptop clipboard</div>';
+          } else {
+            isImage = false;
+            currentClipText = data.content || "(Laptop clipboard is empty)";
+            container.innerHTML = '<div class="content-box" id="pc-clip"></div>';
+            document.getElementById('pc-clip').innerText = currentClipText;
+          }
+        }).catch(e => console.error(e));
+    }
+
+    function copyToPhone() {
+      if (isImage) {
+        window.open('/clip/image', '_blank');
+        showToast("✓ Image opened! Long press to save.");
+      } else {
+        if (!currentClipText) return;
+        navigator.clipboard.writeText(currentClipText).then(() => {
+          showToast("✓ Copied to Phone Clipboard!");
+        }).catch(() => {
+          showToast("✓ Selected! Copy using long press.");
+        });
+      }
+    }
+
+    function sendPhoneClipToPC() {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText().then(text => {
+          if (!text) {
+            showToast("⚠️ Phone clipboard is empty!");
+            return;
+          }
+          sendPayload({ text: text });
+        }).catch(() => {
+          const manual = document.getElementById('manual-text').value;
+          if (manual) sendPayload({ text: manual });
+          else showToast("Please paste text into the box below");
+        });
+      } else {
+        const manual = document.getElementById('manual-text').value;
+        if (manual) sendPayload({ text: manual });
+        else showToast("Please paste text into the box below");
+      }
+    }
+
+    function sendManualText() {
+      const text = document.getElementById('manual-text').value;
       if (!text) return;
+      sendPayload({ text: text });
+      document.getElementById('manual-text').value = '';
+    }
+
+    function sendPayload(payload) {
       fetch('/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text })
+        body: JSON.stringify(payload)
       }).then(r => r.json()).then(data => {
-        const s = document.getElementById('send-status');
-        s.style.display = 'block';
-        document.getElementById('phone-input').value = '';
-        setTimeout(() => s.style.display = 'none', 2500);
-      });
+        showToast("🚀 Sent to Laptop Clipboard!");
+      }).catch(e => showToast("Error sending"));
     }
+
+    function uploadPhoto(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append("photo", file);
+      showToast("Uploading photo to laptop...");
+      fetch('/upload-photo', {
+        method: 'POST',
+        body: formData
+      }).then(r => r.json()).then(data => {
+        showToast("✓ Photo pasted to Laptop Clipboard!");
+        input.value = "";
+      }).catch(e => showToast("Error uploading photo"));
+    }
+
+    refreshLaptopClip();
+    setInterval(refreshLaptopClip, 3000);
   </script>
 </body>
 </html>
 """
 
-class ClipHandler(http.server.BaseHTTPRequestHandler):
+class SyncHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
     def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
-            clip = get_clipboard()
-            safe_clip = clip.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-            page = HTML_PAGE.replace("{CURRENT_CLIP}", safe_clip)
+        if self.path in ("/", "/index.html"):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(page.encode("utf-8"))
-        elif self.path == "/get":
-            clip = get_clipboard()
+            self.wfile.write(HTML_PAGE.encode("utf-8"))
+        elif self.path.startswith("/clip/image"):
+            if os.path.exists(IMAGE_CACHE):
+                with open(IMAGE_CACHE, "rb") as f:
+                    img_data = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(img_data)))
+                self.end_headers()
+                self.wfile.write(img_data)
+            else:
+                self.send_error(404)
+        elif self.path == "/clip":
+            info = get_laptop_clipboard()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"clipboard": clip}).encode("utf-8"))
+            self.wfile.write(json.dumps(info).encode("utf-8"))
         else:
             self.send_error(404)
 
@@ -136,7 +274,7 @@ class ClipHandler(http.server.BaseHTTPRequestHandler):
                 data = json.loads(body)
                 text = data.get("text", "")
                 if text:
-                    set_clipboard(text)
+                    set_laptop_clipboard(text)
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
@@ -145,23 +283,40 @@ class ClipHandler(http.server.BaseHTTPRequestHandler):
             except Exception:
                 pass
             self.send_error(400)
+        elif self.path == "/upload-photo":
+            try:
+                ctype, pdict = cgi.parse_header(self.headers.get('content-type', ''))
+                if ctype == 'multipart/form-data':
+                    pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
+                    fields = cgi.parse_multipart(self.rfile, pdict)
+                    photos = fields.get('photo', [])
+                    if photos and len(photos) > 0:
+                        set_laptop_clipboard_image(photos[0])
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"status": "ok"}).encode("utf-8"))
+                        return
+            except Exception as e:
+                print("Error in upload-photo:", e)
+            self.send_error(400)
 
 def main():
     ip = get_local_ip()
     url = f"http://{ip}:{PORT}"
     print("===================================================================")
-    print("  📱 Wireless Phone <> PC Clipboard Bridge")
-    print(f"  🔗 Local URL: {url}")
-    print("  Scan QR with phone camera (NO apps needed on phone!):")
+    print("  📱 Wireless Phone <> Workstation Clipboard & Photo Bridge")
+    print(f"  🔗 URL: {url}")
+    print("  Scan QR with Phone Camera (or open in browser & tap 'Add to Home Screen'):")
     print("===================================================================\n")
     subprocess.run(["qrencode", "-t", "ansiutf8", url])
-    print("\nPress Ctrl+C to stop sharing.\n")
+    print("\n✓ Live 2-way sync active. Press Ctrl+C to stop.")
     
-    server = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), ClipHandler)
+    server = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), SyncHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nStopped.")
+        print("\nBridge stopped.")
 
 if __name__ == "__main__":
     main()

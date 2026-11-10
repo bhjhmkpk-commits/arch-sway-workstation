@@ -45,6 +45,7 @@ bindsym $mod+F1 exec ~/.local/bin/keysheet-menu
 bindsym $mod+Shift+v exec ~/.local/bin/cliphist-menu
 bindsym $mod+c exec ~/.local/bin/universal-copy
 bindsym $mod+v exec ~/.local/bin/universal-paste
+bindsym $mod+Ctrl+c exec ~/.local/bin/clip-push
 bindsym $mod+Escape exec $term --app-id=btop -e btop
 bindsym $mod+Shift+r reload
 bindsym $mod+Backspace exec swaylock

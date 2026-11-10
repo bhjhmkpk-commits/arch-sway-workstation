@@ -56,6 +56,7 @@ ${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
   ${C}\$mod + Alt + Return${RESET}      Terminal Workspace (${DIM}tmux${RESET})
   ${C}\$mod + c${RESET}                 Universal Copy (Terminal & all GUI apps)
   ${C}\$mod + v${RESET}                 Universal Paste (Terminal & all GUI apps)
+  ${C}\$mod + Ctrl + c${RESET}          Push Clipboard (text/photo) to Phone Bridge
   ${C}\$mod + Shift + v${RESET}         Clipboard history menu (${DIM}cliphist${RESET})
   ${C}\$mod + /${RESET} / ${C}\$mod + ?${RESET}         Complete searchable keybinding finder (${DIM}keysheet${RESET})
   ${C}\$mod + Escape${RESET}            Task & resource monitor (${DIM}btop${RESET})

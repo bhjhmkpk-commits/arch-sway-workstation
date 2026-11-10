@@ -109,6 +109,13 @@ chmod +x "$HOME/.local/bin/"*
 sudo ln -sf "$HOME/.local/bin/sys-optimize" "/usr/local/bin/sys-optimize"
 sudo ln -sf "$HOME/.local/bin/brave-origin" "/usr/local/bin/brave-origin"
 
+# Deploy Polkit rules for passwordless Ventoy
+if [ -f "$SCRIPT_DIR/dotfiles/config/polkit-1/50-ventoy.rules" ]; then
+    sudo mkdir -p /etc/polkit-1/rules.d
+    sudo cp -f "$SCRIPT_DIR/dotfiles/config/polkit-1/50-ventoy.rules" "/etc/polkit-1/rules.d/50-ventoy.rules"
+    sudo chmod 644 "/etc/polkit-1/rules.d/50-ventoy.rules"
+fi
+
 # Deploy 512x512 web application icons & desktop entries
 cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/512x512/apps/"
 cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/256x256/apps/"

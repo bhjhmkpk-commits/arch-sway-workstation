@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📋 Arch Sway Workstation - Push Clipboard to Phone Bridge
+# Triggered via $mod + Ctrl + c
+# ==============================================================================
+
+IMAGE_CACHE="/tmp/phone_clip_image.png"
+
+# Check if phone-clip server is active
+if ! pgrep -f "phone-clip" >/dev/null 2>&1; then
+    # Start phone-clip server silently via systemd-run or nohup
+    nohup ~/.local/bin/phone-clip >/dev/null 2>&1 &
+    sleep 0.5
+fi
+
+# Detect whether clipboard holds image or text
+MIME_TYPES=$(wl-paste -l 2>/dev/null || true)
+
+if echo "$MIME_TYPES" | grep -qE "image/png|image/jpeg"; then
+    wl-paste -t image/png > "$IMAGE_CACHE" 2>/dev/null
+    notify-send -a "Phone Sync" -i camera-photo "📸 Image Pushed to Phone!" "Open 'Sync' on your phone to view or copy."
+else
+    TEXT=$(wl-paste 2>/dev/null || true)
+    if [[ -z "$TEXT" ]]; then
+        notify-send -a "Phone Sync" -i edit-paste "Clipboard Empty" "Nothing in clipboard to push."
+        exit 0
+    fi
+    PREVIEW="${TEXT:0:60}"
+    notify-send -a "Phone Sync" -i edit-paste "📋 Text Pushed to Phone!" "$PREVIEW..."
+fi

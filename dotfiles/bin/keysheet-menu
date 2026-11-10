@@ -15,6 +15,7 @@ ENTRIES=(
   "⌨️ [Launcher] Searchable Keybinding Sheet                     →   \$mod + /  /  \$mod + ?|~/.local/bin/keysheet-menu"
   "📋 [Clipboard] Universal Copy (Terminal & All Apps)          →   \$mod + c|~/.local/bin/universal-copy"
   "📋 [Clipboard] Universal Paste (Terminal & All Apps)         →   \$mod + v|~/.local/bin/universal-paste"
+  "📋 [Clipboard] Push Clipboard (Text/Photo) to Phone Bridge   →   \$mod + Ctrl + c|~/.local/bin/clip-push"
   "📋 [Clipboard] Clipboard History Search & Paste (Cliphist)    →   \$mod + Shift + v|~/.local/bin/cliphist-menu"
   "📊 [Launcher] System Resource & Task Monitor (Btop)           →   \$mod + Escape|foot --app-id=btop -e btop"
   "💻 [Terminal] Open Foot Terminal                              →   \$mod + Return|foot"

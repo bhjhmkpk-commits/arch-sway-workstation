@@ -18,6 +18,7 @@
 | **Terminal**| Persistent Tmux Work Session | **`$mod + Alt + Return`** | Re-attaches to background workspace |
 | **Clipboard**| **Universal Copy** | **`$mod + c`** | Works across terminal, browser, and all GUI apps |
 | **Clipboard**| **Universal Paste** | **`$mod + v`** | Works across terminal, browser, and all GUI apps |
+| **Clipboard**| **Push to Phone Bridge** | **`$mod + Ctrl + c`** | Send clipboard text or photo to phone bridge |
 | **Clipboard**| Clipboard History (Cliphist) | **`$mod + Shift + v`** | Search, paste, or wipe clipboard |
 | **Monitor** | System & Task Monitor (Btop) | **`$mod + Escape`** | CPU, GPU, RAM, Disks, Networks |
 | **Browser** | Chromium Browser | **`$mod + b`** | Default Web Browser |
