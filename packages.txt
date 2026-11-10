@@ -27,6 +27,11 @@ hicolor-icon-theme
 viewnior
 mpv
 xreader
+xournalpp
+pdfarranger
+pinta
+mousepad
+galculator
 thunar
 thunar-archive-plugin
 tumbler
@@ -37,6 +42,17 @@ android-udev
 xarchiver
 unzip
 7zip
+
+# USB & Storage Utilities
+gnome-disk-utility
+usbutils
+dosfstools
+exfatprogs
+ntfs-3g
+
+# Mobile & Android Management
+android-tools
+scrcpy
 
 # Audio & Volume Routing (PipeWire)
 pipewire
@@ -77,6 +93,8 @@ wget
 yazi
 fd
 jq
+tealdeer
+lazygit
 man-db
 man-pages
 
