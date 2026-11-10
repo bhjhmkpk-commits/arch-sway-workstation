@@ -70,6 +70,7 @@ grim
 slurp
 wl-clipboard
 cliphist
+wtype
 tesseract
 tesseract-data-eng
 

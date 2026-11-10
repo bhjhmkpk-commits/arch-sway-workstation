@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📋 Arch Sway Workstation - Universal Copy ($mod+c)
+# Sends Ctrl+Shift+C in terminal (foot/tmux) and Ctrl+C in GUI apps
+# ==============================================================================
+
+APP=$(swaymsg -t get_tree 2>/dev/null | jq -r '.. | select(.focused? == true) | .app_id // .window_properties.class' 2>/dev/null)
+
+sleep 0.05
+
+if [[ "$APP" == "foot" || "$APP" == "tmux" ]]; then
+    wtype -m logo -m win -M ctrl -M shift -k c -m shift -m ctrl 2>/dev/null || wl-paste --primary | wl-copy 2>/dev/null
+else
+    wtype -m logo -m win -M ctrl -k c -m ctrl 2>/dev/null || wl-paste --primary | wl-copy 2>/dev/null
+fi

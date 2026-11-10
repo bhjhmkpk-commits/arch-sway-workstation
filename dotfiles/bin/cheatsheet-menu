@@ -13,7 +13,7 @@ ENTRIES=(
   "📑 PDF Arranger  │ Visual drag & drop PDF page split, merge, rotate, crop │ Hotkey: \$mod+Shift+p  •  CLI: pdfarranger|pdfarranger"
   "📷 Screen OCR    │ Select any screen area to extract and copy text        │ Hotkey: \$mod+Shift+o  •  Alt+Print|~/.local/bin/ocr-grab"
   "🧮 Qalc (calc)   │ Symbolic math, physics units, calculus & currencies    │ Hotkey: \$mod+c  •  calc \"50 USD in INR\"|foot -e qalc"
-  "🔢 Galculator    │ Lightweight GTK scientific desktop calculator          │ Hotkey: \$mod+c  •  CLI: galculator|galculator"
+  "🔢 Galculator    │ Lightweight GTK scientific desktop calculator          │ Hotkey: \$mod+=  •  CLI: galculator|galculator"
   "📱 Scrcpy        │ 60fps Android screen mirror & mouse/keyboard control   │ Hotkey: \$mod+a  (over USB or Wi-Fi)|scrcpy"
   "📱 Share Wi-Fi   │ Drop files/folders to Android phone via terminal QR   │ Hotkey: \$mod+Ctrl+w  •  share-wifi|foot --app-id=share-wifi -e ~/.local/bin/share-wifi"
   "📱 Debloater     │ Safely remove or disable vendor & carrier bloatware    │ Hotkey: \$mod+Alt+a  •  uad-ng|uad-ng"

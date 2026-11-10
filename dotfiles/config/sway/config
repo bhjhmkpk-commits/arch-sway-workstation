@@ -43,6 +43,8 @@ bindsym $mod+slash exec ~/.local/bin/keysheet-menu
 bindsym $mod+question exec ~/.local/bin/keysheet-menu
 bindsym $mod+F1 exec ~/.local/bin/keysheet-menu
 bindsym $mod+Shift+v exec ~/.local/bin/cliphist-menu
+bindsym $mod+c exec ~/.local/bin/universal-copy
+bindsym $mod+v exec ~/.local/bin/universal-paste
 bindsym $mod+Escape exec $term --app-id=btop -e btop
 bindsym $mod+Shift+r reload
 bindsym $mod+Backspace exec swaylock
@@ -60,7 +62,8 @@ bindsym $mod+Mod1+f exec $term --app-id=yazi -e yazi
 # Academic & Documents
 bindsym $mod+p exec xournalpp
 bindsym $mod+Shift+p exec pdfarranger
-bindsym $mod+c exec galculator
+bindsym $mod+equal exec galculator
+bindsym $mod+Shift+c exec galculator
 bindsym $mod+i exec pinta
 bindsym $mod+m exec mousepad
 
@@ -127,7 +130,7 @@ bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
 # ── 7. Layout Splits ──────────────────────────────────────────────────────────
-bindsym $mod+v splitv
+bindsym $mod+minus splitv
 bindsym $mod+backslash splith
 bindsym $mod+s layout stacking
 bindsym $mod+Shift+w layout tabbed

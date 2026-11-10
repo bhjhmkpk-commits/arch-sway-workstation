@@ -16,6 +16,8 @@
 | **Launcher**| Application Search (Wofi) | **`$mod + d`** or **`$mod + Space`** | Native Wayland application menu |
 | **Terminal**| Foot Terminal | **`$mod + Return`** | Blazing-fast GPU-accelerated terminal |
 | **Terminal**| Persistent Tmux Work Session | **`$mod + Alt + Return`** | Re-attaches to background workspace |
+| **Clipboard**| **Universal Copy** | **`$mod + c`** | Works across terminal, browser, and all GUI apps |
+| **Clipboard**| **Universal Paste** | **`$mod + v`** | Works across terminal, browser, and all GUI apps |
 | **Clipboard**| Clipboard History (Cliphist) | **`$mod + Shift + v`** | Search, paste, or wipe clipboard |
 | **Monitor** | System & Task Monitor (Btop) | **`$mod + Escape`** | CPU, GPU, RAM, Disks, Networks |
 | **Browser** | Chromium Browser | **`$mod + b`** | Default Web Browser |
@@ -24,7 +26,7 @@
 | **Files**   | Terminal File Manager (Yazi) | **`$mod + Alt + f`** | Fast terminal file manager with image previews |
 | **PDF**     | Annotate & Sign (Xournal++) | **`$mod + p`** | Lecture notes, PDF highlighting, signing |
 | **PDF**     | Split, Merge & Crop (PDF Arranger)| **`$mod + Shift + p`** | Drag & drop PDF page manipulator |
-| **Math**    | Scientific Calculator (Galculator)| **`$mod + c`** | GTK scientific desktop calculator |
+| **Math**    | Scientific Calculator (Galculator)| **`$mod + =`** / **`$mod + Shift + c`** | GTK scientific desktop calculator |
 | **Math**    | Physics, Calculus & Currency | `calc "<expr>"` | E.g. `calc "50 USD in INR"`, `calc "2.5 eV in J"` |
 | **Image**   | Image Editor & Cropper (Pinta)| **`$mod + i`** | Paint.NET alternative: crop, retouch, layers |
 | **Notes**   | Quick GUI Text Notes (Mousepad)| **`$mod + m`** | Fast tabbed text editor with syntax highlighting |
@@ -53,7 +55,7 @@
 | **Window**  | Toggle Floating / Tiling | **`$mod + t`** | Float individual window |
 | **Window**  | Window Focus Navigation | **`$mod + Arrows`** or **`$mod + h, j, l, Up`** | Focus window direction |
 | **Window**  | Window Move Navigation | **`$mod + Shift + Arrows`** or **`h, j, k, l`** | Move container direction |
-| **Layout**  | Vertical / Horizontal Split | **`$mod + v`** / **`$mod + \`** | Set container split orientation |
+| **Layout**  | Vertical / Horizontal Split | **`$mod + -`** / **`$mod + \`** | Set container split orientation |
 | **Layout**  | Stacking / Tabbed Layout | **`$mod + s`** / **`$mod + Shift + w`** | Tabbed or stacked container views |
 | **Workspaces**| Switch Workspace 1–10 | **`$mod + 1 .. 0`** | Instant workspace switching |
 | **Workspaces**| Move Container to Workspace | **`$mod + Shift + 1 .. 0`** | Move window to target workspace |
