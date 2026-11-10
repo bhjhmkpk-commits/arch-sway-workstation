@@ -6,7 +6,7 @@
 # - Native photo & video thumbnails
 # - Permanent friendly bookmark name "📱 Phone Storage"
 # - Zero login popups (100% silent, automatic anonymous auth)
-# - Managed via transient systemd user service (phone-mount.service)
+# - Auto-cleans stale/zombie FUSE mounts before reconnecting
 # ==============================================================================
 
 MOUNT_DIR="$HOME/Phone"
@@ -21,10 +21,9 @@ fi
 
 do_unmount() {
     systemctl --user stop phone-mount 2>/dev/null || true
-    if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
-        fusermount -u "$MOUNT_DIR" 2>/dev/null || true
-    fi
-    pkill -f "rclone mount.*Phone" 2>/dev/null || true
+    systemctl --user reset-failed phone-mount 2>/dev/null || true
+    fusermount -u -z "$MOUNT_DIR" 2>/dev/null || true
+    pkill -9 -f "rclone mount.*Phone" 2>/dev/null || true
     notify-send -a "Phone Storage" -i phone "Phone Storage Unmounted" "Disconnected from Phone."
 }
 
@@ -34,7 +33,7 @@ if [[ "$1" == "-u" || "$1" == "--unmount" ]]; then
 fi
 
 # If already mounted and healthy, just open and focus Thunar
-if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+if mountpoint -q "$MOUNT_DIR" 2>/dev/null && ls "$MOUNT_DIR" >/dev/null 2>&1; then
     notify-send -a "Phone Storage" -i phone "Phone Storage Active" "Opening $MOUNT_DIR"
     thunar "$MOUNT_DIR" &
     sleep 0.3
@@ -102,16 +101,22 @@ fi
 
 notify-send -a "Phone Storage" -i phone "Connecting to Phone..." "$HOST:$PORT"
 
-# Clean any existing or stale mount
+# Clean any existing or stale/zombie FUSE mount cleanly
 systemctl --user stop phone-mount 2>/dev/null || true
-fusermount -u "$MOUNT_DIR" 2>/dev/null || true
+systemctl --user reset-failed phone-mount 2>/dev/null || true
+fusermount -u -z "$MOUNT_DIR" 2>/dev/null || true
+pkill -9 -f "rclone mount.*Phone" 2>/dev/null || true
+sleep 0.2
 mkdir -p "$MOUNT_DIR"
 
-# Launch rclone mount as a managed user service with VFS caching and fast timeouts
-systemd-run --user --unit=phone-mount \
+# Launch rclone mount as a managed user service with VFS caching and safe connection limits
+systemd-run --user --unit=phone-mount --collect \
     rclone mount \
         ":ftp,host=${HOST},port=${PORT},user=anonymous,pass=_5VuALJ9M8jthLASrPcpJg:" \
         "$MOUNT_DIR" \
+        --ftp-concurrency 4 \
+        --checkers 2 \
+        --transfers 2 \
         --vfs-cache-mode full \
         --vfs-cache-max-age 2h \
         --vfs-read-chunk-size 2M \
@@ -122,14 +127,13 @@ systemd-run --user --unit=phone-mount \
         --timeout 5s \
         --contimeout 3s \
         --low-level-retries 1 \
-        --daemon-timeout 5s \
-        -o auto_unmount \
+        --allow-non-empty \
         >/dev/null 2>&1
 
-# Wait up to 3 seconds for mount to become ready
+# Wait up to 3 seconds for mount to become ready and healthy
 MOUNTED=false
 for _ in {1..15}; do
-    if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+    if mountpoint -q "$MOUNT_DIR" 2>/dev/null && ls "$MOUNT_DIR" >/dev/null 2>&1; then
         MOUNTED=true
         break
     fi
@@ -137,6 +141,7 @@ for _ in {1..15}; do
 done
 
 if [[ "$MOUNTED" != "true" ]]; then
+    fusermount -u -z "$MOUNT_DIR" 2>/dev/null || true
     notify-send -u critical -a "Phone Storage" -i dialog-error "Mount Failed" "Could not mount phone storage to $MOUNT_DIR."
     exit 1
 fi
