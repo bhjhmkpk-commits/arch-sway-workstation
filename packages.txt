@@ -50,6 +50,8 @@ dosfstools
 exfatprogs
 ntfs-3g
 sshfs
+rclone
+fuse3
 
 # Mobile & Android Management
 android-tools

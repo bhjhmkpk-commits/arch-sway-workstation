@@ -1,30 +1,54 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 📱 Arch Sway Workstation - Wireless Phone Storage Mount (Thunar)
-# Connects to Android FTP/SFTP server over local Wi-Fi with 1 click
-# 0 MB idle RAM, native GVFS / Thunar integration.
+# 📱 Arch Sway Workstation - Wireless Phone Storage Mount (Native FUSE)
+# Mounts Android FTP/SFTP to ~/Phone via rclone VFS cache engine.
+# - Full POSIX random-access seeking (MPV video streaming)
+# - Native photo & video thumbnails
+# - Permanent friendly bookmark name "📱 Phone Storage"
+# - Zero login popups (100% silent, automatic anonymous auth)
+# - Managed via transient systemd user service (phone-mount.service)
 # ==============================================================================
 
+MOUNT_DIR="$HOME/Phone"
 CONFIG_FILE="$HOME/.config/phone-mount.conf"
-DEFAULT_URI="ftp://192.168.1.15:2121"
+BOOKMARKS_FILE="$HOME/.config/gtk-3.0/bookmarks"
+DEFAULT_URI="ftp://192.168.31.157:2121"
 
 if [[ -f "$CONFIG_FILE" ]]; then
     SAVED_URI=$(cat "$CONFIG_FILE" 2>/dev/null)
     [[ -n "$SAVED_URI" ]] && DEFAULT_URI="$SAVED_URI"
 fi
 
-if [[ "$1" == "-u" || "$1" == "--unmount" ]]; then
-    if [[ -n "$SAVED_URI" ]]; then
-        gio mount -u "$SAVED_URI" 2>/dev/null || true
-        notify-send -a "Phone Storage" -i phone "Phone Unmounted" "Disconnected from $SAVED_URI"
+do_unmount() {
+    systemctl --user stop phone-mount 2>/dev/null || true
+    if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+        fusermount -u "$MOUNT_DIR" 2>/dev/null || true
     fi
+    pkill -f "rclone mount.*Phone" 2>/dev/null || true
+    notify-send -a "Phone Storage" -i phone "Phone Storage Unmounted" "Disconnected from Phone."
+}
+
+if [[ "$1" == "-u" || "$1" == "--unmount" ]]; then
+    do_unmount
     exit 0
-elif [[ -n "$1" ]]; then
+fi
+
+# If already mounted and healthy, just open and focus Thunar
+if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+    notify-send -a "Phone Storage" -i phone "Phone Storage Active" "Opening $MOUNT_DIR"
+    thunar "$MOUNT_DIR" &
+    sleep 0.3
+    swaymsg '[app_id="thunar"] focus' 2>/dev/null || true
+    exit 0
+fi
+
+# Determine URI (Zenity dialog if GUI, CLI if argument passed)
+if [[ -n "$1" ]]; then
     RAW_URI="$1"
 elif [ -n "$WAYLAND_DISPLAY" ] && command -v zenity >/dev/null 2>&1; then
     RAW_URI=$(zenity --entry \
-        --title="📱 Wireless Phone Storage (Thunar)" \
-        --text="1. Tap 'Start Server' on your phone (Material Files / Cx Explorer)\n2. Enter Phone address:" \
+        --title="📱 Wireless Phone Storage" \
+        --text="1. Tap 'Start Server' on your phone\n2. Confirm phone address:" \
         --entry-text="$DEFAULT_URI" 2>/dev/null)
 else
     read -rp "Enter Phone Server URI [$DEFAULT_URI]: " RAW_URI
@@ -33,7 +57,7 @@ fi
 
 [[ -z "$RAW_URI" ]] && exit 0
 
-# Normalize URI and extract host & port using Python
+# Parse Host & Port using Python
 PARSED=$(python3 -c "
 import urllib.parse, sys
 uri = sys.argv[1].strip()
@@ -43,11 +67,7 @@ u = urllib.parse.urlsplit(uri)
 scheme = u.scheme or 'ftp'
 port = u.port or (2222 if scheme == 'sftp' else 2121)
 hostname = u.hostname or '127.0.0.1'
-auth = ''
-if u.username:
-    auth = f'{u.username}:{u.password}@' if u.password else f'{u.username}@'
-path = u.path or '/'
-full_uri = f'{scheme}://{auth}{hostname}:{port}{path}'
+full_uri = f'{scheme}://{hostname}:{port}/'
 print(f'{hostname} {port} {full_uri}')
 " "$RAW_URI" 2>/dev/null)
 
@@ -60,7 +80,7 @@ fi
 
 echo "$NORMALIZED_URI" > "$CONFIG_FILE"
 
-# Preflight socket check (1.5s timeout) to ensure phone server is responsive
+# Fast preflight socket check (1.5s timeout)
 IS_REACHABLE=$(python3 -c "
 import socket, sys
 try:
@@ -76,17 +96,57 @@ except Exception:
 if [[ "$IS_REACHABLE" != "OK" ]]; then
     notify-send -u critical -a "Phone Storage" -i network-error \
         "Phone Server Unreachable" \
-        "Could not connect to $HOST:$PORT.\n\n✓ Make sure your phone and laptop are on the SAME Wi-Fi.\n✓ Make sure 'Start Server' is active in your phone's file manager app."
+        "Could not connect to $HOST:$PORT.\n\n✓ Make sure your phone and laptop are on the SAME Wi-Fi.\n✓ Make sure Wi-Fi FTP server is running on your phone."
     exit 1
 fi
 
-notify-send -a "Phone Storage" -i phone "Mounting Phone Storage..." "$NORMALIZED_URI"
+notify-send -a "Phone Storage" -i phone "Connecting to Phone..." "$HOST:$PORT"
 
-# Mount via GVFS with anonymous auth flag so it never hangs for stdin credentials
-gio mount -a "$NORMALIZED_URI" 2>/dev/null || gio mount "$NORMALIZED_URI" 2>/dev/null || true
+# Clean any existing or stale mount
+systemctl --user stop phone-mount 2>/dev/null || true
+fusermount -u "$MOUNT_DIR" 2>/dev/null || true
+mkdir -p "$MOUNT_DIR"
 
-# Open Thunar at the phone storage location and focus its window/workspace
-thunar "$NORMALIZED_URI" &
+# Launch rclone mount as a managed user service with VFS caching
+systemd-run --user --unit=phone-mount \
+    rclone mount \
+        ":ftp,host=${HOST},port=${PORT},user=anonymous,pass=_5VuALJ9M8jthLASrPcpJg:" \
+        "$MOUNT_DIR" \
+        --vfs-cache-mode full \
+        --vfs-cache-max-age 2h \
+        --vfs-read-chunk-size 2M \
+        --vfs-read-chunk-size-limit 64M \
+        --buffer-size 32M \
+        --no-modtime \
+        --dir-cache-time 1m \
+        >/dev/null 2>&1
+
+# Wait up to 3 seconds for mount to become ready
+MOUNTED=false
+for _ in {1..15}; do
+    if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+        MOUNTED=true
+        break
+    fi
+    sleep 0.2
+done
+
+if [[ "$MOUNTED" != "true" ]]; then
+    notify-send -u critical -a "Phone Storage" -i dialog-error "Mount Failed" "Could not mount phone storage to $MOUNT_DIR."
+    exit 1
+fi
+
+# Ensure friendly bookmark in GTK bookmarks file
+mkdir -p "$(dirname "$BOOKMARKS_FILE")"
+touch "$BOOKMARKS_FILE"
+if ! grep -q "file://$MOUNT_DIR" "$BOOKMARKS_FILE" 2>/dev/null; then
+    echo "file://$MOUNT_DIR 📱 Phone Storage" >> "$BOOKMARKS_FILE"
+fi
+
+notify-send -a "Phone Storage" -i phone "Phone Connected!" "Mounted at ~/Phone with video streaming & thumbnails."
+
+# Open Thunar and bring to focus
+thunar "$MOUNT_DIR" &
 sleep 0.3
 swaymsg '[app_id="thunar"] focus' 2>/dev/null || true
 exit 0
