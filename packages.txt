@@ -74,6 +74,11 @@ neovim
 git
 curl
 wget
+yazi
+fd
+jq
+man-db
+man-pages
 
 # System Optimization, Maintenance & Hardware Control
 ddcutil
@@ -81,6 +86,7 @@ pacman-contrib
 ffmpegthumbnailer
 xdg-user-dirs
 github-cli
+ufw
 
 # Minimal Login Manager
 greetd

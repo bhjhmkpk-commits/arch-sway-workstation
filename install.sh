@@ -165,6 +165,14 @@ EOF
 sudo systemctl enable greetd.service
 echo -e "${GREEN}✓ Minimal tuigreet login manager configured and enabled!${NC}"
 
+# 12. Host Security: Firewall (UFW)
+echo -e "\n${BLUE}🛡️ Configuring host firewall (UFW)...${NC}"
+sudo ufw default deny incoming >/dev/null 2>&1 || true
+sudo ufw default allow outgoing >/dev/null 2>&1 || true
+sudo ufw --force enable >/dev/null 2>&1 || true
+sudo systemctl enable ufw.service >/dev/null 2>&1 || true
+echo -e "${GREEN}✓ Host firewall active (deny incoming, allow outgoing)!${NC}"
+
 echo -e "\n${GREEN}=================================================================${NC}"
 echo -e "${GREEN}  🎉 Arch Sway Workstation Installation Complete!               ${NC}"
 echo -e "${GREEN}=================================================================${NC}"
