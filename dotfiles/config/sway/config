@@ -38,6 +38,8 @@ bindsym $mod+d exec $menu
 bindsym $mod+space exec $menu
 bindsym $mod+f fullscreen toggle
 bindsym $mod+Shift+space focus mode_toggle
+bindsym $mod+k exec ~/.local/bin/cheatsheet-menu
+bindsym $mod+F1 exec ~/.local/bin/cheatsheet-menu
 bindsym $mod+Shift+v exec ~/.local/bin/cliphist-menu
 bindsym $mod+Escape exec $term --app-id=btop -e btop
 bindsym $mod+Shift+r reload
@@ -83,7 +85,6 @@ bindsym $mod+Shift+o exec ~/.local/bin/ocr-grab
 # ── 6. Window Navigation (Vim & Arrows) ────────────────────────────────────────
 bindsym $mod+h focus left
 bindsym $mod+j focus down
-bindsym $mod+k focus up
 bindsym $mod+l focus right
 bindsym $mod+Left focus left
 bindsym $mod+Down focus down

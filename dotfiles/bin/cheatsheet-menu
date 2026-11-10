@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🚀 Arch Sway Workstation - Dynamic Interactive Cheatsheet & Action HUD
+# Bound to $mod+k. Shows shortcuts, tools & launches selection directly
+# ==============================================================================
+
+ENTRIES=(
+  "📷 [OCR] Grab Text from Screen to Clipboard   →   \$mod+Shift+o / Alt+Print|~/.local/bin/ocr-grab"
+  "📑 [PDF] Annotate, Highlight & Sign Forms     →   Xournal++|xournalpp"
+  "📑 [PDF] Merge, Split, Rotate & Crop Pages    →   PDF Arranger|pdfarranger"
+  "📱 [Phone] Share Files over Wi-Fi (QR Code)   →   share-wifi|foot -e ~/.local/bin/share-wifi"
+  "📱 [Phone] Mirror & Control Android Screen   →   scrcpy|scrcpy"
+  "📱 [Phone] Universal Android Debloater       →   Universal Debloater|uad-ng"
+  "💾 [USB] Format, Partition & Flash ISOs       →   Disks (gnome-disks)|gnome-disks"
+  "💾 [USB] Multi-Boot ISO Flash Drive           →   Ventoy GUI|ventoygui"
+  "🎨 [Image] Edit, Crop & Retouch Layers        →   Pinta|pinta"
+  "📝 [Notes] Fast GUI Text Editor               →   Mousepad|mousepad"
+  "🧮 [Math] Physics, Calculus & Unit Calculator →   calc / qalc|foot -e qalc"
+  "🔢 [Math] Scientific Desktop Calculator       →   Calculator (galculator)|galculator"
+  "🗂️ [Nav] Smart Directory Jump                →   z <folder-name>|notify-send -a 'Cheatsheet' 'Smart Directory Jump' 'Use \"z <name>\" in terminal to jump directly to any folder.'"
+  "📦 [Git] Interactive TUI Git Manager          →   lg (lazygit)|foot -e lazygit"
+  "💡 [Help] Command Cheatsheets & Examples      →   tldr <cmd>|foot -e bash -c 'echo \"Usage: tldr <command> (e.g., tldr tar, tldr adb)\"; exec bash'"
+  "💾 [Disk] Interactive Storage Usage Explorer  →   gdu ~|foot -e gdu ~"
+  "🖥️ [System] Task & Resource Monitor           →   \$mod+Escape (btop)|foot --app-id=btop -e btop"
+  "📋 [Clipboard] Clipboard History Menu         →   \$mod+Shift+v|~/.local/bin/cliphist-menu"
+  "📷 [Screenshot] Full Screen Capture           →   Print|~/.local/bin/screenshot full"
+  "📷 [Screenshot] Area / Window Crop            →   Shift+Print|~/.local/bin/screenshot area"
+  "🌙 [EyeCare] Toggle Night Light               →   nightlight toggle|~/.local/bin/nightlight toggle"
+  "🧘 [Wellbeing] Digital Wellbeing Status       →   sway-wellbeing|foot -e ~/.local/bin/sway-wellbeing status"
+  "🌐 [Web] Chromium Browser                     →   \$mod+b|chromium"
+  "📁 [Files] Thunar File Manager                →   thunar|thunar"
+)
+
+LABELS=""
+for entry in "${ENTRIES[@]}"; do
+    label="${entry%%|*}"
+    LABELS+="${label}"$'\n'
+done
+
+SELECTED=$(echo -n "$LABELS" | wofi --dmenu --prompt "⚡ Cheatsheet HUD ($mod+k)" --lines 14 --width 650)
+
+if [[ -z "$SELECTED" ]]; then
+    exit 0
+fi
+
+for entry in "${ENTRIES[@]}"; do
+    label="${entry%%|*}"
+    action="${entry#*|}"
+    if [[ "$SELECTED" == "$label" ]]; then
+        eval "$action" &
+        exit 0
+    fi
+done

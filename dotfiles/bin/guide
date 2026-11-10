@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🚀 Arch Sway Workstation - CLI Cheatsheet & Guide
+# Run with 'guide' or 'cheat' in terminal
+# ==============================================================================
+
+G='\033[1;32m'
+C='\033[1;36m'
+Y='\033[1;33m'
+M='\033[1;35m'
+R='\033[1;31m'
+B='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
+
+cat << EOF
+${G}================================================================================${RESET}
+${BOLD}  🚀 Arch Sway Workstation - Quick Reference Guide${RESET}
+${DIM}  Press ${BOLD}\$mod + k${RESET}${DIM} anywhere to open the Interactive Cheatsheet HUD & Launcher${RESET}
+${G}================================================================================${RESET}
+
+${Y}🎓 1. STUDENT, ACADEMIC & DOCUMENTS${RESET}
+  ${C}\$mod + Shift + o${RESET} / ${C}Alt + Print${RESET}  Instant Screen OCR (select area → copies text)
+  ${C}Xournal++${RESET}                 PDF annotation, handwritten notes & form signing
+  ${C}PDF Arranger${RESET}              Visual PDF drag-and-drop page split, merge & crop
+  ${C}calc "<expr>"${RESET}             Physics constants, units, calculus (${DIM}qalc "50 USD in INR"${RESET})
+  ${C}Calculator${RESET}                Scientific desktop calculator (${DIM}galculator${RESET})
+
+${Y}📱 2. ANDROID & MOBILE UTILITIES${RESET}
+  ${C}share-wifi [file]${RESET}         Instant Wi-Fi file sharing via terminal QR code
+  ${C}scrcpy${RESET}                    60fps Android screen mirror & mouse/keyboard control
+  ${C}uad-ng${RESET}                    Universal Android Debloater (safe bloatware removal)
+  ${C}Thunar${RESET}                    Plug phone via USB to browse internal storage (MTP)
+
+${Y}💾 3. USB, DISKS & STORAGE${RESET}
+  ${C}Disks${RESET} (${DIM}gnome-disks${RESET})         GUI format (FAT32/exFAT/NTFS), partition & burn ISOs
+  ${C}ventoygui${RESET}                 Multi-boot flash drive creator (drag & drop ISOs)
+  ${C}lsusb${RESET}                     Inspect all connected USB devices & hardware IDs
+
+${Y}💻 4. DEVELOPER, LINUX & CLI${RESET}
+  ${C}z <folder-name>${RESET}           Smart directory jump (${DIM}z jam${RESET}, ${DIM}z sway${RESET}, ${DIM}z pic${RESET})
+  ${C}lg${RESET}                        LazyGit terminal UI (stage lines, branches, diffs)
+  ${C}tldr <command>${RESET}            Practical, fast command examples (${DIM}tldr tar${RESET}, ${DIM}tldr adb${RESET})
+  ${C}cat <file>${RESET}                Syntax-highlighted file view (${DIM}bat${RESET})
+  ${C}catp <file>${RESET}               Full paginated file view with Git diff indicators
+  ${C}gdu ~${RESET}                     Interactive, arrow-key disk space explorer
+  ${C}uv run <script.py>${RESET}        Fast, isolated Python & AI script runner
+
+${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
+  ${C}\$mod + k${RESET} / ${C}\$mod + F1${RESET}        Interactive Cheatsheet HUD & Action Launcher
+  ${C}\$mod + d${RESET} / ${C}\$mod + Space${RESET}     Application launcher (${DIM}Wofi${RESET})
+  ${C}\$mod + Return${RESET}            Terminal (${DIM}foot${RESET})
+  ${C}\$mod + Alt + Return${RESET}      Terminal Workspace (${DIM}tmux${RESET})
+  ${C}\$mod + Shift + v${RESET}         Clipboard history menu (${DIM}cliphist${RESET})
+  ${C}\$mod + Escape${RESET}            Task & resource monitor (${DIM}btop${RESET})
+  ${C}\$mod + b${RESET}                 Chromium browser
+  ${C}\$mod + w${RESET}                 Close focused window
+  ${C}\$mod + Shift + r${RESET}         Reload Sway compositor configuration
+  ${C}\$mod + Backspace${RESET}         Lock screen (${DIM}swaylock${RESET})
+  ${C}Print${RESET} / ${C}Shift + Print${RESET}      Full / cropped screenshot (${DIM}satty${RESET})
+
+${G}================================================================================${RESET}
+EOF
