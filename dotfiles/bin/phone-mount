@@ -107,7 +107,7 @@ systemctl --user stop phone-mount 2>/dev/null || true
 fusermount -u "$MOUNT_DIR" 2>/dev/null || true
 mkdir -p "$MOUNT_DIR"
 
-# Launch rclone mount as a managed user service with VFS caching
+# Launch rclone mount as a managed user service with VFS caching and fast timeouts
 systemd-run --user --unit=phone-mount \
     rclone mount \
         ":ftp,host=${HOST},port=${PORT},user=anonymous,pass=_5VuALJ9M8jthLASrPcpJg:" \
@@ -119,6 +119,11 @@ systemd-run --user --unit=phone-mount \
         --buffer-size 32M \
         --no-modtime \
         --dir-cache-time 1m \
+        --timeout 5s \
+        --contimeout 3s \
+        --low-level-retries 1 \
+        --daemon-timeout 5s \
+        -o auto_unmount \
         >/dev/null 2>&1
 
 # Wait up to 3 seconds for mount to become ready

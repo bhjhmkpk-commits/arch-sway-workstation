@@ -19,6 +19,7 @@ default_border pixel 2
 default_floating_border pixel 2
 gaps inner 6
 gaps outer 4
+focus_on_window_activation focus
 
 # Colors (Everforest / Forest Sage - Eye Care)
 client.focused          #a7c080 #23382f #e6e2d8 #a7c080 #a7c080
