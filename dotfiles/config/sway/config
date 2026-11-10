@@ -169,6 +169,7 @@ exec_always mako
 exec lxpolkit
 exec /usr/lib/xdg-desktop-portal-wlr
 exec ~/.local/bin/nightlight on
+exec_always xhost +si:localuser:root >/dev/null 2>&1
 
 # Idle inhibitor: Prevent screen sleep when any window is fullscreen
 for_window [all] inhibit_idle fullscreen
