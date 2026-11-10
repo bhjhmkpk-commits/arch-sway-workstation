@@ -4,6 +4,9 @@
 # Bound to $mod+k. Shows shortcuts, tools & launches selection directly
 # ==============================================================================
 
+CONF="$HOME/.config/wofi/cheatsheet.conf"
+STYLE="$HOME/.config/wofi/cheatsheet.css"
+
 ENTRIES=(
   "📷 [OCR] Grab Text from Screen to Clipboard   →   \$mod+Shift+o / Alt+Print|~/.local/bin/ocr-grab"
   "📑 [PDF] Annotate, Highlight & Sign Forms     →   Xournal++|xournalpp"
@@ -37,7 +40,7 @@ for entry in "${ENTRIES[@]}"; do
     LABELS+="${label}"$'\n'
 done
 
-SELECTED=$(echo -n "$LABELS" | wofi --dmenu --prompt "⚡ Cheatsheet HUD ($mod+k)" --lines 14 --width 650)
+SELECTED=$(echo -n "$LABELS" | wofi --conf "$CONF" --style "$STYLE" --dmenu --prompt "⚡ Cheatsheet HUD (\$mod+k)")
 
 if [[ -z "$SELECTED" ]]; then
     exit 0
