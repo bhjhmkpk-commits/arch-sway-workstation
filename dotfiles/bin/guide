@@ -72,6 +72,7 @@ ${Y}🌐 6. WEB APPS & AI ASSISTANTS${RESET}
   ${C}\$mod + Alt + k${RESET} / ${C}+ d${RESET}     Claude AI assistant (${DIM}Anthropic${RESET})
   ${C}\$mod + Alt + w${RESET}           WhatsApp Web
   ${C}\$mod + Alt + m${RESET}           Gmail
+  ${C}\$mod + y${RESET}                   YT-DLP Menu (floating CLI media downloader)
   ${C}\$mod + Shift + y${RESET} / ${C}+ m${RESET}   YouTube / YouTube Music
 
 ${G}================================================================================${RESET}

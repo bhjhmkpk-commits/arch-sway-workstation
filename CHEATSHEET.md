@@ -45,6 +45,7 @@
 | **Web Apps**| **Claude AI** | **`$mod + Alt + k`** or **`d`** | Anthropic Claude AI assistant |
 | **Web Apps**| **WhatsApp Web** | **`$mod + Alt + w`** | Standalone WhatsApp Web client |
 | **Web Apps**| **Gmail** | **`$mod + Alt + m`** | Standalone Gmail inbox client |
+| **Media**   | **YT-DLP Menu** | **`$mod + y`** | Floating CLI video/audio downloader menu |
 | **Web Apps**| YouTube / Music | **`$mod + Shift + y`** / **`m`** | Standalone YouTube & Music players |
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |

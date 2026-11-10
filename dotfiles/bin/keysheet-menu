@@ -69,6 +69,7 @@ ENTRIES=(
   "💬 [App] WhatsApp Web Messaging App                           →   \$mod + Alt + w|chromium --app='https://web.whatsapp.com' --name='webapp-whatsapp-web' --class='WebApp-whatsapp-web'"
   "✉️ [App] Gmail Inbox Web App                                  →   \$mod + Alt + m|chromium --app='https://mail.google.com' --name='webapp-gmail' --class='WebApp-gmail'"
   "📺 [App] YouTube Web App                                      →   \$mod + Shift + y|chromium --app='https://youtube.com' --name='webapp-youtube' --class='WebApp-youtube'"
+  "🎬 [App] Media Downloader TUI (YT-DLP Menu)                   →   \$mod + y|foot --app-id=yt-dlp-menu -e yt-dlp-menu"
   "🎵 [App] YouTube Music Web App                                →   \$mod + Shift + m|chromium --app='https://music.youtube.com' --name='webapp-youtube-music' --class='WebApp-youtube-music'"
   "📷 [Capture] Full Screen Screenshot (Satty)                   →   Print|~/.local/bin/screenshot full"
   "📷 [Capture] Area / Window Screenshot (Satty)                 →   Shift + Print|~/.local/bin/screenshot area"

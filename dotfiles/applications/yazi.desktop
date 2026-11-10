@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Yazi File Manager
+GenericName=File Manager
+Comment=Blazing fast terminal file manager written in Rust
+Icon=yazi
+Terminal=false
+Exec=foot --app-id=yazi-floating -e yazi %f
+Type=Application
+MimeType=inode/directory
+Categories=System;FileManager;FileTools;ConsoleOnly;
+Keywords=File;Manager;Explorer;Browser;Launcher;
+StartupWMClass=yazi-floating

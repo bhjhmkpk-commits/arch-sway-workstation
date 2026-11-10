@@ -39,6 +39,7 @@ ENTRIES=(
   "🧘 Wellbeing     │ 20-20-20 eye strain reminder & screen time limiter     │ Hotkey: \$mod+Alt+e (menu)|~/.local/bin/sway-wellbeing menu"
   "📁 Thunar        │ Graphical file manager with MTP Android phone browsing │ Hotkey: \$mod+Shift+f|thunar"
   "📁 Yazi          │ Blazing-fast terminal file manager with image previews │ Hotkey: \$mod+Alt+f|foot --app-id=yazi -e yazi"
+  "🎬 YT-DLP Menu   │ Terminal UI media downloader (YouTube, video, audio)   │ Hotkey: \$mod+y  •  CLI: yt-dlp-menu|foot --app-id=yt-dlp-menu -e yt-dlp-menu"
   "🌐 Chromium      │ Fast native Wayland web browser                        │ Hotkey: \$mod+b|chromium"
   "🤖 Gemini AI     │ Google Gemini conversational AI assistant              │ Hotkey: \$mod+Alt+g  •  Web App|chromium --app='https://gemini.google.com/' --name='webapp-gemini' --class='WebApp-gemini'"
   "🤖 ChatGPT       │ OpenAI ChatGPT assistant                               │ Hotkey: \$mod+Alt+c  •  Web App|chromium --app='https://chatgpt.com' --name='webapp-chatgpt' --class='WebApp-chatgpt'"

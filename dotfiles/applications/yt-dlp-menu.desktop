@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=YT-DLP Menu
+GenericName=YouTube Downloader
+Comment=Interactive CLI & TUI YouTube Video Downloader
+Icon=video-x-generic
+Terminal=false
+Exec=foot --app-id=yt-dlp-menu -e yt-dlp-menu
+Type=Application
+Categories=AudioVideo;Audio;Video;Network;ConsoleOnly;
+Keywords=YouTube;Download;Video;Audio;yt-dlp;
+StartupWMClass=yt-dlp-menu
