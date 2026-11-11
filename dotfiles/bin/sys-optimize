@@ -75,11 +75,20 @@ EOF
 systemctl daemon-reexec 2>/dev/null || true
 systemctl mask upower.service 2>/dev/null || true
 
-echo "==> 10. Boot time optimizations (GRUB 1s timeout, disable network wait-online)..."
+echo "==> 10. Boot time optimizations (1s timeout, disable network wait-online)..."
 systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
+# Optimize GRUB if present
 if grep -q "^GRUB_TIMEOUT=[2-9]" /etc/default/grub 2>/dev/null; then
     sed -i "s/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=1/" /etc/default/grub
     grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
+fi
+# Optimize systemd-boot if present
+if [ -f /boot/loader/loader.conf ]; then
+    if grep -q "^timeout" /boot/loader/loader.conf; then
+        sed -i "s/^timeout.*/timeout 1/" /boot/loader/loader.conf
+    else
+        echo "timeout 1" >> /boot/loader/loader.conf
+    fi
 fi
 
 echo -e "\n\033[0;32m✓ System optimization complete! Resource usage minimized and essentials in place.\033[0m"
