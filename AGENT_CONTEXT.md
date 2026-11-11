@@ -137,6 +137,15 @@ cd arch-sway-workstation
 ./install.sh
 ```
 
+### 4. Restoring Past AGY Chats & Database History
+If restoring the full historical CLI conversations from the Ventoy USB backup (`agy_conversations_backup.tar.gz`):
+```bash
+mkdir -p ~/.gemini
+tar -xzvf /path/to/workstation_backup/agy_conversations_backup.tar.gz -C ~/.gemini/
+agy auth login
+```
+This restores all past conversation threads, SQLite summaries database, and transcripts.
+
 ---
 
 ## 🤖 Instructions for AI Assistants
