@@ -188,25 +188,29 @@ sudo ufw --force enable >/dev/null 2>&1 || true
 sudo systemctl enable ufw.service >/dev/null 2>&1 || true
 echo -e "${GREEN}✓ Host firewall active with LocalSend & Phone Clip ports open!${NC}"
 
-echo -e "\n${GREEN}=================================================================${NC}"
-echo -e "${GREEN}  🎉 Arch Sway Workstation Installation Complete!               ${NC}"
-echo -e "${GREEN}=================================================================${NC}"
-echo -e "Start Sway immediately by running: ${BOLD}${YELLOW}sway${NC} or reboot your system."
-echo -e "\nEssential Keybindings:"
-echo -e "  • Super + k              : Interactive Utility Chart & Guide"
-echo -e "  • Super + /              : Searchable Keybinding Finder"
-echo -e "  • Super + c / v          : Universal Copy / Paste across all apps"
-echo -e "  • Super + Ctrl + m       : Phone Storage in Thunar (Samsung style)"
-echo -e "  • Super + Ctrl + p       : Phone <> PC Clipboard Bridge (QR code)"
-echo -e "  • Super + Enter          : Foot Terminal"
-echo -e "  • Super + Space / D      : Wofi Application Menu"
-echo -e "  • Super + Shift + F      : Thunar File Manager"
-echo -e "  • Super + B              : Chromium Web Browser"
-echo -e "  • Print / Shift + Print  : Screenshot & Annotation (Satty)"
-echo -e "  • Super + Shift + O      : Instant Screen OCR to Clipboard"
-echo -e "  • Super + Shift + V      : Clipboard History Menu"
-echo -e "  • Super + Escape         : System Monitor (btop)"
-echo -e "  • Super + Alt + E        : Wellbeing & Eye Care Menu"
-echo -e "  • Super + W              : Close Window"
-echo -e "  • Super + Shift + E      : Exit Sway"
-echo -e "\n"
+# 13. System Optimizations & Boot Speedups
+echo -e "\n${BLUE}⚡ Running workstation system & boot optimizations...${NC}"
+sudo "$HOME/.local/bin/sys-optimize" || true
+
+echo -e "\n${GREEN}=================================================================${NC}
+${GREEN}  🎉 Arch Sway Workstation Installation Complete!               ${NC}
+${GREEN}=================================================================${NC}
+Start Sway immediately by running: ${BOLD}${YELLOW}sway${NC} or reboot your system.
+\nEssential Keybindings:
+  • Super + k              : Interactive Utility Chart & Guide
+  • Super + /              : Searchable Keybinding Finder
+  • Super + c / v          : Universal Copy / Paste across all apps
+  • Super + Ctrl + m       : Phone Storage in Thunar (Samsung style)
+  • Super + Ctrl + p       : Phone <> PC Clipboard Bridge (QR code)
+  • Super + Enter          : Foot Terminal
+  • Super + Space / D      : Wofi Application Menu
+  • Super + Shift + F      : Thunar File Manager
+  • Super + B              : Chromium Web Browser
+  • Print / Shift + Print  : Screenshot & Annotation (Satty)
+  • Super + Shift + O      : Instant Screen OCR to Clipboard
+  • Super + Shift + V      : Clipboard History Menu
+  • Super + Escape         : System Monitor (btop)
+  • Super + Alt + E        : Wellbeing & Eye Care Menu
+  • Super + W              : Close Window
+  • Super + Shift + E      : Power Menu (Power Off / Reboot / Logout)
+\n"

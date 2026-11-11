@@ -16,31 +16,33 @@ An ultra-lightweight, blazing-fast (~350 MB idle RAM, 0.0% CPU) **Everforest-the
 
 ---
 
-## 💿 Step 1: Base Operating System (What ISO to Boot)
+## 💿 Step 1: Base Operating System & UEFI Setup
 
-This workstation runs on **pure Vanilla Arch Linux**:
+This workstation runs on **pure Vanilla Arch Linux** in native **64-bit UEFI** mode:
 
-1. **Download the Official ISO**:
-   - Download the latest `archlinux-x86_64.iso` from [archlinux.org/download](https://archlinux.org/download/).
-2. **Flash to USB**:
-   - Using Rufus (DD mode), Ventoy, or `dd`:
-     ```bash
-     sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress oflag=sync
-     ```
-3. **Boot into the Live Installer**:
-   - Boot in UEFI mode.
-   - Run the guided Arch installer:
-     ```bash
-     archinstall
-     ```
-4. **Recommended `archinstall` Settings for Pure Speed**:
-   - **Profile**: Select `Minimal` (Do **NOT** select a Desktop Environment or Window Manager!).
-   - **Audio**: Select `PipeWire`.
-   - **Network configuration**: Select `NetworkManager`.
-   - **Disk configuration**: Btrfs or ext4 (Btrfs with zstd compression recommended).
-   - **User account**: Create your user account and grant **sudo (wheel)** access.
+1. **Motherboard BIOS Settings (Crucial)**:
+   - Enter BIOS (press <kbd>Del</kbd> or <kbd>F2</kbd> on startup).
+   - Disable **CSM (Compatibility Support Module)** / set Boot Mode to **UEFI Only**.
+   - Ensure SATA Controller is set to **AHCI**.
+2. **Boot the Arch Linux USB in UEFI Mode**:
+   - Press <kbd>F11</kbd> or <kbd>F12</kbd> for the boot menu and choose `UEFI: <Your USB Name>`.
+3. **Launch the Installer**:
+   ```bash
+   archinstall
+   ```
+4. **Recommended `archinstall` Options (Single-Drive or Dual-Boot with Omarchy)**:
+   - **Disk configuration**: Choose **Manual Partitioning** on your SSD (e.g. `/dev/sda`):
+     - Partition Table: **`gpt`** (Wipe any legacy MBR table).
+     - Partition 1: **`1024M`** (1 GiB) → Type: `EFI System Partition` → Mountpoint: `/boot` (FAT32).
+     - Partition 2: **`110G`** → Type: `Linux filesystem` → Mountpoint: `/` (Filesystem: `btrfs` with default subvolumes).
+     - **Remaining ~120 GB**: Leave as **Free / Unallocated Space** (for Omarchy!).
+   - **Bootloader**: `systemd-boot` or `GRUB`.
+   - **Profile**: `Minimal` (Do **NOT** select any desktop environment!).
+   - **Audio**: `PipeWire`.
+   - **Network configuration**: `NetworkManager`.
+   - **User account**: Add user `bohar` with **sudo** privileges.
 5. **Reboot**:
-   - When finished, remove the USB drive and reboot into your fresh minimal Arch tty prompt.
+   - Remove the USB and reboot directly into your fast UEFI minimal terminal prompt.
 
 ---
 
@@ -66,7 +68,7 @@ The script will:
 3. Deploy custom productivity scripts to `~/.local/bin/`.
 4. Deploy crisp 512×512 web application icons.
 5. Enable background systemd user services (`swayidle`, `cliphist`, `sway-wellbeing`).
-6. Configure auto-login on `tty1` so Sway starts instantly without any display manager overhead.
+6. Configure minimal `tuigreet` login manager (`greetd`).
 
 ---
 
@@ -91,7 +93,7 @@ The script will:
 | <kbd>Super</kbd> + <kbd>Ctrl</kbd> + <kbd>E</kbd> | **Pause/Resume Eye Timer** | Quick toggle for break timer |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> | **Web App Manager** | Create standalone borderless PWAs |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> | **Reload Sway Live** | Reloads Sway and Waybar configs on the fly |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> | **Exit Sway Prompt** | Safe exit prompt |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> | **Power Menu** | Instant Power Off, Reboot, or Logout |
 
 ---
 
