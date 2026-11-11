@@ -47,6 +47,7 @@ ENTRIES=(
   "💬 WhatsApp      │ WhatsApp Web messaging PWA                             │ Hotkey: \$mod+Alt+w  •  Web App|chromium --app='https://web.whatsapp.com' --name='webapp-whatsapp-web' --class='WebApp-whatsapp-web'"
   "✉️ Gmail         │ Google Mail inbox PWA                                  │ Hotkey: \$mod+Alt+m  •  Web App|chromium --app='https://mail.google.com' --name='webapp-gmail' --class='WebApp-gmail'"
   "🔒 Swaylock      │ Secure Wayland session lock screen                     │ Hotkey: \$mod+Backspace / \$mod+Ctrl+l|swaylock"
+  "⚡ Power Menu    │ Instant Power Off, Reboot, or Logout Dialog            │ Hotkey: \$mod+Shift+e  •  CLI: shutdown|swaynag -t warning -m 'Power Menu' -B 'Power Off' 'systemctl poweroff -i' -B 'Reboot' 'systemctl reboot -i' -B 'Exit Sway' 'swaymsg exit'"
 )
 
 LABELS=""

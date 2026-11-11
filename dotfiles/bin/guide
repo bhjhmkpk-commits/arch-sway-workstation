@@ -63,7 +63,9 @@ ${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
   ${C}\$mod + b${RESET}                 Chromium browser
   ${C}\$mod + w${RESET}                 Close focused window
   ${C}\$mod + Shift + r${RESET}         Reload Sway compositor configuration
+  ${C}\$mod + Shift + e${RESET}         Power menu (Power Off / Reboot / Logout)
   ${C}\$mod + Backspace${RESET}         Lock screen (${DIM}swaylock${RESET})
+  ${C}shutdown${RESET} / ${C}reboot${RESET}        Instant power actions (${DIM}systemctl poweroff -i${RESET})
   ${C}Print${RESET} / ${C}Shift + Print${RESET}      Full / cropped screenshot (${DIM}satty${RESET})
 
 ${Y}🌐 6. WEB APPS & AI ASSISTANTS${RESET}

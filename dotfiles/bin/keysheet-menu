@@ -22,7 +22,7 @@ ENTRIES=(
   "💻 [Terminal] Persistent Tmux Work Session                    →   \$mod + Alt + Return|foot --app-id=tmux -e tmux new -A -s Work"
   "🔒 [Session] Lock Screen (Swaylock)                          →   \$mod + Backspace  /  \$mod + Ctrl + l|swaylock"
   "🔄 [Session] Reload Sway Compositor Config                    →   \$mod + Shift + r|swaymsg reload"
-  "🚪 [Session] Exit / Logout Sway Session                      →   \$mod + Shift + e|swaynag -t warning -m 'Exit Sway?' -B 'Yes, exit' 'swaymsg exit'"
+  "⚡ [Session] Power Menu (Power Off / Reboot / Logout)          →   \$mod + Shift + e|swaynag -t warning -m 'Power Menu' -B 'Power Off' 'systemctl poweroff -i' -B 'Reboot' 'systemctl reboot -i' -B 'Exit Sway' 'swaymsg exit'"
   "❌ [Window] Close / Kill Focused Window                       →   \$mod + w|swaymsg kill"
   "🖥️ [Window] Toggle Fullscreen Mode                            →   \$mod + f|swaymsg fullscreen toggle"
   "🪟 [Window] Toggle Floating / Tiling Mode                    →   \$mod + t|swaymsg floating toggle"
