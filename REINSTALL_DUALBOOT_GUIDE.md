@@ -168,3 +168,20 @@ Do **NOT** disable CSM or set Video to UEFI (that is what caused the HDMI black 
 At power-on, your motherboard's UEFI boot menu will offer:
 * **Arch Linux** $\rightarrow$ Ultra-lean (~350 MB RAM, 0% CPU) Everforest Sway Workstation for daily coding & deep work.
 * **Omarchy** $\rightarrow$ Modern, LUKS-encrypted Hyprland developer distribution.
+
+---
+
+## 🔄 Future Flexibility: Reclaiming the Free Space Anytime
+
+If in the future you decide you no longer need Omarchy (or don't want a dual boot) and want the entire 256 GB drive dedicated solely to Arch Sway, you can reclaim the space in 5 seconds without rebooting:
+
+1. **Delete the Omarchy partition** (Partition 3) using `fdisk` or `gnome-disk-utility`:
+   ```bash
+   sudo fdisk /dev/sda # (delete partition 3, save with w)
+   ```
+2. **Grow Partition 2 and expand Btrfs**:
+   ```bash
+   sudo parted /dev/sda resizepart 2 100%
+   sudo btrfs filesystem resize max /
+   ```
+3. Done! Your Arch Sway system instantly expands from 110 GiB to the full 238.5 GiB with zero data loss.
