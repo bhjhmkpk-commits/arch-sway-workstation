@@ -27,6 +27,10 @@ hicolor-icon-theme
 # Everyday Media, Documents & Archive Suite
 viewnior
 mpv
+yt-dlp
+gum
+python-secretstorage
+python-jeepney
 xreader
 xournalpp
 pdfarranger

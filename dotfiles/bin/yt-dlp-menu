@@ -1,0 +1,818 @@
+#!/usr/bin/env bash
+
+# Source user environment if present (e.g. Omarchy)
+if [[ -f "$HOME/.local/lib/omarchy-user-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.local/lib/omarchy-user-env.sh"
+fi
+
+set -euo pipefail
+
+# Ensure gum input has a fallback width to prevent Charm Bubbles v2 placeholder panic
+export GUM_INPUT_WIDTH="${GUM_INPUT_WIDTH:-80}"
+
+app_name="YT-DLP Menu"
+default_dir="$HOME/Downloads/yt-dlp"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/yt-dlp-menu"
+archive_file="$state_dir/archive.txt"
+folder_history_file="$state_dir/output-folders.txt"
+preset_dir="$state_dir/presets"
+preset_seed_marker="$preset_dir/.defaults-seeded"
+log_dir="$state_dir/logs"
+
+mkdir -p "$default_dir" "$state_dir" "$log_dir" "$preset_dir"
+
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    printf '%s is required\n' "$1" >&2
+    exit 1
+  fi
+}
+
+notify() {
+  local urgency="$1"
+  local body="$2"
+  notify-send -u "$urgency" "$app_name" "$body" >/dev/null 2>&1 || true
+}
+
+title() {
+  gum style \
+    --foreground 212 \
+    --border foreground \
+    --border rounded \
+    --padding "0 2" \
+    "$app_name"
+}
+
+selected() {
+  local needle="$1"
+  local haystack="$2"
+  grep -Fxq "$needle" <<<"$haystack"
+}
+
+split_args() {
+  local text="$1"
+  python3 - "$text" <<'PY'
+import shlex
+import sys
+
+for item in shlex.split(sys.argv[1]):
+    print(item)
+PY
+}
+
+join_args() {
+  python3 - "$@" <<'PY'
+import shlex
+import sys
+
+print(shlex.join(sys.argv[1:]))
+PY
+}
+
+url_looks_like_playlist() {
+  local url
+
+  for url in "${urls[@]}"; do
+    case "$url" in
+      *"list="*|*"youtube.com/playlist"*|*"music.youtube.com/playlist"*|*"youtube.com/channel/"*|*"youtube.com/c/"*|*"youtube.com/user/"*|*"youtube.com/@"*)
+        return 0
+        ;;
+    esac
+  done
+
+  return 1
+}
+
+detect_cookie_browsers() {
+  command -v brave >/dev/null 2>&1 && [[ -d "$HOME/.config/BraveSoftware/Brave-Browser" ]] && printf 'brave\n'
+  command -v chromium >/dev/null 2>&1 && [[ -d "$HOME/.config/chromium" ]] && printf 'chromium\n'
+  command -v google-chrome >/dev/null 2>&1 && [[ -d "$HOME/.config/google-chrome" ]] && printf 'chrome\n'
+  command -v firefox >/dev/null 2>&1 && [[ -d "$HOME/.mozilla/firefox" ]] && printf 'firefox\n'
+  command -v vivaldi >/dev/null 2>&1 && [[ -d "$HOME/.config/vivaldi" ]] && printf 'vivaldi\n'
+  command -v microsoft-edge >/dev/null 2>&1 && [[ -d "$HOME/.config/microsoft-edge" ]] && printf 'edge\n'
+}
+
+choose_cookie_browser() {
+  local header="$1"
+  local browsers=()
+
+  mapfile -t browsers < <(detect_cookie_browsers)
+
+  if (( ${#browsers[@]} == 1 )); then
+    printf '%s\n' "${browsers[0]}"
+    return
+  fi
+
+  if (( ${#browsers[@]} > 1 )); then
+    gum choose --header "$header" "${browsers[@]}"
+    return
+  fi
+
+  gum style --foreground 196 "No supported browser cookie source is installed."
+  gum style --foreground 244 "Chromium is supported directly. If that fails, export cookies.txt from Chromium instead."
+  return 1
+}
+
+default_cookie_browser() {
+  local browsers=()
+
+  mapfile -t browsers < <(detect_cookie_browsers)
+  (( ${#browsers[@]} > 0 )) || return 1
+  printf '%s\n' "${browsers[0]}"
+}
+
+cookie_browser_arg() {
+  case "$1" in
+    brave|chromium|chrome|edge)
+      printf '%s+gnomekeyring\n' "$1"
+      ;;
+    *)
+      printf '%s\n' "$1"
+      ;;
+  esac
+}
+
+has_cookie_args() {
+  local arg
+  for arg in "${args[@]}"; do
+    case "$arg" in
+      --cookies|--cookies=*|--cookies-from-browser|--cookies-from-browser=*)
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
+needs_browser_cookies() {
+  grep -qiE "not a bot|Use --cookies-from-browser|Use --cookies for the authentication|unable to download video data: HTTP Error 403" "$log_file"
+}
+
+python_secretstorage_ready() {
+  python3 - <<'PY' >/dev/null 2>&1
+import secretstorage
+import jeepney
+PY
+}
+
+show_cookie_help() {
+  gum style --foreground 214 "YouTube still needs usable signed-in cookies."
+
+  if ! python_secretstorage_ready; then
+    gum style --foreground 244 "Install cookie decryption support for Chromium/Brave:"
+    gum style --foreground 244 "  Arch:   sudo pacman -S --needed python-secretstorage python-jeepney"
+    gum style --foreground 244 "  Debian: sudo apt install python3-secretstorage python3-jeepney"
+    gum style --foreground 244 "  Fedora: sudo dnf install python3-secretstorage python3-jeepney"
+  fi
+
+  gum style --foreground 244 "Brave, Chromium, Chrome, and Firefox are supported as direct cookie sources."
+  gum style --foreground 244 "If browser cookies still fail, export cookies.txt from your browser and choose: Use cookies file."
+}
+
+recent_output_dirs() {
+  [[ -f "$folder_history_file" ]] || return 0
+
+  awk 'NF && !seen[$0]++' "$folder_history_file" | while IFS= read -r dir; do
+    [[ -d "$dir" ]] && printf '%s\n' "$dir"
+  done | head -n 12
+}
+
+remember_output_dir() {
+  local dir="$1"
+  local tmp="$folder_history_file.tmp"
+
+  [[ -n "$dir" && "$dir" != "$default_dir" ]] || return 0
+
+  {
+    printf '%s\n' "$dir"
+    if [[ -f "$folder_history_file" ]]; then
+      grep -Fxv "$dir" "$folder_history_file" || true
+    fi
+  } | awk 'NF && !seen[$0]++' | head -n 20 >"$tmp"
+
+  mv "$tmp" "$folder_history_file"
+}
+
+preset_slug() {
+  local slug
+  slug="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^[:alnum:]._-]+/-/g; s/^-+//; s/-+$//')"
+  [[ -n "$slug" ]] || slug="preset"
+  printf '%s\n' "$slug"
+}
+
+preset_file_for_name() {
+  printf '%s/%s.preset\n' "$preset_dir" "$(preset_slug "$1")"
+}
+
+preset_value_from_file() {
+  local file="$1"
+  local key="$2"
+  local line
+
+  while IFS= read -r line; do
+    [[ "${line%%=*}" == "$key" ]] || continue
+    printf '%s\n' "${line#*=}"
+    return 0
+  done <"$file"
+}
+
+list_preset_names() {
+  local files=()
+  local file name
+
+  shopt -s nullglob
+  files=("$preset_dir"/*.preset)
+  shopt -u nullglob
+
+  for file in "${files[@]}"; do
+    name="$(preset_value_from_file "$file" name)"
+    [[ -n "$name" ]] && printf '%s\n' "$name"
+  done
+}
+
+preset_file_by_name() {
+  local target="$1"
+  local files=()
+  local file name
+
+  shopt -s nullglob
+  files=("$preset_dir"/*.preset)
+  shopt -u nullglob
+
+  for file in "${files[@]}"; do
+    name="$(preset_value_from_file "$file" name)"
+    if [[ "$name" == "$target" ]]; then
+      printf '%s\n' "$file"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+save_preset() {
+  local name="$1"
+  local output_dir_value="$2"
+  local playlist_policy_value="$3"
+  local args_value="$4"
+  local file tmp
+
+  mkdir -p "$preset_dir"
+  file="$(preset_file_for_name "$name")"
+  tmp="$file.tmp"
+
+  {
+    printf 'name=%s\n' "$name"
+    printf 'output_dir=%s\n' "$output_dir_value"
+    printf 'playlist_policy=%s\n' "$playlist_policy_value"
+    printf 'args=%s\n' "$args_value"
+  } >"$tmp"
+
+  mv "$tmp" "$file"
+}
+
+load_preset() {
+  local name="$1"
+  local file
+
+  file="$(preset_file_by_name "$name")" || return 1
+  preset_name="$(preset_value_from_file "$file" name)"
+  preset_output_dir="$(preset_value_from_file "$file" output_dir)"
+  preset_playlist_policy="$(preset_value_from_file "$file" playlist_policy)"
+  preset_args_string="$(preset_value_from_file "$file" args)"
+
+  [[ -n "$preset_args_string" ]]
+}
+
+seed_default_presets() {
+  local files=()
+
+  shopt -s nullglob
+  files=("$preset_dir"/*.preset)
+  shopt -u nullglob
+
+  if (( ${#files[@]} > 0 )); then
+    touch "$preset_seed_marker"
+    return 0
+  fi
+
+  [[ -f "$preset_seed_marker" ]] && return 0
+
+  save_preset \
+    "Audio m4a Music" \
+    "$HOME/Music/yt-dlp" \
+    "auto" \
+    "$(join_args --newline --progress -x --audio-format m4a --audio-quality 0 --no-playlist -o "$HOME/Music/yt-dlp/%(title).200B [%(id)s].%(ext)s")"
+
+  save_preset \
+    "Audio opus Music" \
+    "$HOME/Music/yt-dlp" \
+    "auto" \
+    "$(join_args --newline --progress -x --audio-format opus --audio-quality 0 --no-playlist -o "$HOME/Music/yt-dlp/%(title).200B [%(id)s].%(ext)s")"
+
+  save_preset \
+    "Best Video" \
+    "$default_dir" \
+    "auto" \
+    "$(join_args --newline --progress -f "bv*+ba/b" --no-playlist -o "$default_dir/%(title).200B [%(id)s].%(ext)s")"
+
+  save_preset \
+    "1080p MP4" \
+    "$default_dir" \
+    "auto" \
+    "$(join_args --newline --progress -f "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4]/b" --merge-output-format mp4 --no-playlist -o "$default_dir/%(title).200B [%(id)s].%(ext)s")"
+
+  touch "$preset_seed_marker"
+}
+
+choose_preset_name() {
+  local header="$1"
+  local preset_names=()
+
+  mapfile -t preset_names < <(list_preset_names)
+  if (( ${#preset_names[@]} == 0 )); then
+    gum style --foreground 196 "No presets found"
+    return 1
+  fi
+
+  gum choose --height=12 --header "$header" "${preset_names[@]}"
+}
+
+remove_no_playlist_arg() {
+  local rebuilt=()
+  local arg
+
+  for arg in "${args[@]}"; do
+    [[ "$arg" == "--no-playlist" ]] && continue
+    rebuilt+=("$arg")
+  done
+
+  args=("${rebuilt[@]}")
+}
+
+replace_output_template() {
+  local template="$1"
+  local rebuilt=()
+  local i=0
+
+  while (( i < ${#args[@]} )); do
+    case "${args[$i]}" in
+      -o|--output)
+        i=$((i + 2))
+        ;;
+      --output=*)
+        i=$((i + 1))
+        ;;
+      *)
+        rebuilt+=("${args[$i]}")
+        i=$((i + 1))
+        ;;
+    esac
+  done
+
+  args=("${rebuilt[@]}" -o "$template")
+}
+
+ask_url() {
+  gum input \
+    --header "Paste URL or search text" \
+    --placeholder "https://www.youtube.com/watch?v=... or ytsearch:..." \
+    --char-limit 0
+}
+
+ask_output_dir() {
+  local choice dir
+  local recent_dirs=()
+  local choices=("Use default: $default_dir")
+
+  mapfile -t recent_dirs < <(recent_output_dirs)
+  if (( ${#recent_dirs[@]} > 0 )); then
+    choices+=("Choose recent folder")
+  fi
+  choices+=("Pick folder" "Type folder path")
+
+  choice="$(gum choose --header "Output folder" "${choices[@]}")"
+
+  case "$choice" in
+    "Choose recent folder")
+      dir="$(gum choose --height=16 --header "Recent output folders" "${recent_dirs[@]}")"
+      ;;
+    "Pick folder")
+      dir="$(gum file "$HOME" --directory --height=18 --header "Pick output folder")"
+      ;;
+    "Type folder path")
+      dir="$(gum input --header "Output folder path" --value "$default_dir" --char-limit 0)"
+      ;;
+    *)
+      dir="$default_dir"
+      ;;
+  esac
+
+  dir="${dir/#\~/$HOME}"
+  mkdir -p "$dir"
+  printf '%s\n' "$dir"
+}
+
+ask_mode() {
+  gum choose --header "Download mode" \
+    "Audio + Video" \
+    "Audio only" \
+    "Video only" \
+    "Custom format id" \
+    "List formats only"
+}
+
+build_mode_args() {
+  local mode="$1"
+  local quality container audio_format format_id
+
+  case "$mode" in
+    "Audio + Video")
+      quality="$(gum choose --header "Video quality" \
+        "Best available" \
+        "Best MP4 compatible" \
+        "2160p or lower" \
+        "1440p or lower" \
+        "1080p or lower" \
+        "720p or lower" \
+        "480p or lower")"
+      container="$(gum choose --header "Merge container" "Auto" "mp4" "mkv" "webm")"
+
+      case "$quality" in
+        "Best MP4 compatible") args+=(-f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b") ;;
+        "2160p or lower") args+=(-f "bv*[height<=2160]+ba/b[height<=2160]/b") ;;
+        "1440p or lower") args+=(-f "bv*[height<=1440]+ba/b[height<=1440]/b") ;;
+        "1080p or lower") args+=(-f "bv*[height<=1080]+ba/b[height<=1080]/b") ;;
+        "720p or lower") args+=(-f "bv*[height<=720]+ba/b[height<=720]/b") ;;
+        "480p or lower") args+=(-f "bv*[height<=480]+ba/b[height<=480]/b") ;;
+        *) args+=(-f "bv*+ba/b") ;;
+      esac
+
+      [[ "$container" == "Auto" ]] || args+=(--merge-output-format "$container")
+      ;;
+    "Audio only")
+      audio_format="$(gum choose --header "Audio format" "m4a" "mp3" "best" "opus" "flac" "wav")"
+      args+=(-x)
+      [[ "$audio_format" == "best" ]] || args+=(--audio-format "$audio_format")
+      case "$audio_format" in
+        mp3|m4a|opus) args+=(--audio-quality 0) ;;
+      esac
+      ;;
+    "Video only")
+      quality="$(gum choose --header "Video-only quality" \
+        "Best video stream" \
+        "2160p or lower" \
+        "1440p or lower" \
+        "1080p or lower" \
+        "720p or lower" \
+        "480p or lower")"
+      case "$quality" in
+        "2160p or lower") args+=(-f "bv*[height<=2160]") ;;
+        "1440p or lower") args+=(-f "bv*[height<=1440]") ;;
+        "1080p or lower") args+=(-f "bv*[height<=1080]") ;;
+        "720p or lower") args+=(-f "bv*[height<=720]") ;;
+        "480p or lower") args+=(-f "bv*[height<=480]") ;;
+        *) args+=(-f "bv*") ;;
+      esac
+      ;;
+    "Custom format id")
+      format_id="$(gum input --header "yt-dlp format id/expression" --placeholder "e.g. 248+251, bestvideo+bestaudio, 22" --char-limit 0)"
+      [[ -n "$format_id" ]] || exit 1
+      args+=(-f "$format_id")
+      ;;
+    "List formats only")
+      args+=(-F)
+      ;;
+  esac
+}
+
+ask_common_options() {
+  gum choose --no-limit --ordered --height=16 --header "Common options" \
+    "Single video only" \
+    "Playlist / channel allowed" \
+    "Playlist item range" \
+    "Embed metadata" \
+    "Write info JSON" \
+    "Write thumbnail" \
+    "Embed thumbnail" \
+    "Write subtitles" \
+    "Write auto subtitles" \
+    "Embed subtitles" \
+    "Remove sponsor segments" \
+    "Use download archive" \
+    "Limit speed" \
+    "Set concurrent fragments" \
+    "Use browser cookies" \
+    "Use cookies file" \
+    "Continue on errors" \
+    "No config files" || true
+}
+
+apply_common_options() {
+  local options="$1"
+  local playlist_items speed fragments browser cookies_file
+  local playlist_mode=0
+
+  if selected "Playlist / channel allowed" "$options" || selected "Playlist item range" "$options"; then
+    playlist_mode=1
+    playlist_policy="playlist"
+  elif selected "Single video only" "$options"; then
+    playlist_policy="single"
+  elif url_looks_like_playlist && ! selected "Single video only" "$options"; then
+    playlist_mode=1
+    playlist_policy="auto"
+    gum style --foreground 214 "Playlist link detected. Playlist mode enabled automatically."
+  else
+    playlist_policy="auto"
+  fi
+
+  if (( playlist_mode )); then
+    output_template="$output_dir/%(playlist_title|Playlist)s/%(playlist_index|000)s - %(title).200B [%(id)s].%(ext)s"
+  else
+    args+=(--no-playlist)
+  fi
+
+  if selected "Playlist item range" "$options"; then
+    playlist_items="$(gum input --header "Playlist items/range" --placeholder "1:10, 1,3,7, -5::2" --char-limit 0)"
+    [[ -n "$playlist_items" ]] && args+=(--playlist-items "$playlist_items")
+  fi
+
+  selected "Embed metadata" "$options" && args+=(--embed-metadata)
+  selected "Write info JSON" "$options" && args+=(--write-info-json)
+  selected "Write thumbnail" "$options" && args+=(--write-thumbnail)
+  selected "Embed thumbnail" "$options" && args+=(--embed-thumbnail)
+  selected "Write subtitles" "$options" && args+=(--write-subs)
+  selected "Write auto subtitles" "$options" && args+=(--write-auto-subs)
+  selected "Embed subtitles" "$options" && args+=(--embed-subs)
+  selected "Remove sponsor segments" "$options" && args+=(--sponsorblock-remove sponsor)
+  selected "Use download archive" "$options" && args+=(--download-archive "$archive_file")
+  selected "Continue on errors" "$options" && args+=(--ignore-errors)
+  selected "No config files" "$options" && args+=(--ignore-config)
+
+  if selected "Limit speed" "$options"; then
+    speed="$(gum input --header "Rate limit" --placeholder "e.g. 2M, 800K" --char-limit 0)"
+    [[ -n "$speed" ]] && args+=(--limit-rate "$speed")
+  fi
+
+  if selected "Set concurrent fragments" "$options"; then
+    fragments="$(gum input --header "Concurrent fragments" --value "4" --char-limit 3)"
+    [[ -n "$fragments" ]] && args+=(--concurrent-fragments "$fragments")
+  fi
+
+  if selected "Use browser cookies" "$options"; then
+    browser="$(choose_cookie_browser "Browser cookies")"
+    args+=(--cookies-from-browser "$(cookie_browser_arg "$browser")")
+  fi
+
+  if selected "Use cookies file" "$options"; then
+    cookies_file="$(gum file "$HOME" --file --height=18 --header "Pick cookies.txt")"
+    [[ -n "$cookies_file" ]] && args+=(--cookies "$cookies_file")
+  fi
+}
+
+build_interactive_args() {
+  local mode common_options extra
+
+  output_dir="$(ask_output_dir)"
+  mode="$(ask_mode)"
+
+  args=(--newline --progress)
+  output_template="$output_dir/%(title).200B [%(id)s].%(ext)s"
+  playlist_policy="auto"
+
+  build_mode_args "$mode"
+  common_options="$(ask_common_options)"
+  apply_common_options "$common_options"
+
+  args+=(-o "$output_template")
+
+  extra="$(gum input --header "Extra yt-dlp args" --placeholder="--write-comments --dateafter 20250101 ..." --char-limit 0)"
+  if [[ -n "$extra" ]]; then
+    mapfile -t extra_args < <(split_args "$extra")
+    args+=("${extra_args[@]}")
+  fi
+}
+
+apply_loaded_preset_adjustments() {
+  playlist_policy="${preset_playlist_policy:-auto}"
+
+  case "$playlist_policy" in
+    playlist)
+      remove_no_playlist_arg
+      ;;
+    single)
+      ;;
+    *)
+      if url_looks_like_playlist; then
+        remove_no_playlist_arg
+        if [[ -n "$output_dir" ]]; then
+          output_template="$output_dir/%(playlist_title|Playlist)s/%(playlist_index|000)s - %(title).200B [%(id)s].%(ext)s"
+          replace_output_template "$output_template"
+        fi
+        gum style --foreground 214 "Playlist link detected. Preset switched to playlist output."
+      fi
+      ;;
+  esac
+}
+
+use_preset() {
+  local name="$1"
+
+  load_preset "$name"
+  output_dir="${preset_output_dir:-$default_dir}"
+  mapfile -t args < <(split_args "$preset_args_string")
+  apply_loaded_preset_adjustments
+}
+
+create_preset() {
+  local name args_string
+
+  name="$(gum input --header "New preset name" --placeholder "Audio m4a Music" --char-limit 60)"
+  [[ -n "$name" ]] || return 1
+
+  build_interactive_args
+  args_string="$(join_args "${args[@]}")"
+  save_preset "$name" "$output_dir" "$playlist_policy" "$args_string"
+  gum style --foreground 82 "Saved preset: $name"
+}
+
+edit_preset() {
+  local old_name old_file name args_string new_file
+
+  old_name="$(choose_preset_name "Edit preset")" || return 1
+  old_file="$(preset_file_by_name "$old_name")"
+
+  name="$(gum input --header "Preset name" --value "$old_name" --char-limit 60)"
+  [[ -n "$name" ]] || return 1
+
+  build_interactive_args
+  args_string="$(join_args "${args[@]}")"
+  save_preset "$name" "$output_dir" "$playlist_policy" "$args_string"
+
+  new_file="$(preset_file_for_name "$name")"
+  if [[ "$old_file" != "$new_file" ]]; then
+    rm -f "$old_file"
+  fi
+
+  gum style --foreground 82 "Updated preset: $name"
+}
+
+delete_preset() {
+  local name file
+
+  name="$(choose_preset_name "Delete preset")" || return 1
+  if gum confirm "Delete preset '$name'?"; then
+    file="$(preset_file_by_name "$name")"
+    rm -f "$file"
+    gum style --foreground 82 "Deleted preset: $name"
+  fi
+}
+
+ask_preset_action() {
+  local preset_names=()
+  local options=("Manual options")
+  local name
+
+  mapfile -t preset_names < <(list_preset_names)
+  for name in "${preset_names[@]}"; do
+    options+=("Use preset: $name")
+  done
+  options+=("New preset" "Edit preset" "Delete preset")
+
+  gum choose --height=14 --header "Preset / options" "${options[@]}"
+}
+
+configure_download_options() {
+  local action name
+
+  while true; do
+    action="$(ask_preset_action)"
+    case "$action" in
+      "Manual options")
+        build_interactive_args
+        return 0
+        ;;
+      "New preset")
+        create_preset || continue
+        return 0
+        ;;
+      "Edit preset")
+        edit_preset || continue
+        return 0
+        ;;
+      "Delete preset")
+        delete_preset || true
+        ;;
+      "Use preset: "*)
+        name="${action#Use preset: }"
+        use_preset "$name"
+        return 0
+        ;;
+    esac
+  done
+}
+
+preview_command() {
+  printf 'yt-dlp'
+  printf ' %q' "${args[@]}"
+  printf ' %q' "${urls[@]}"
+  printf '\n'
+}
+
+show_help() {
+  cat <<'EOF'
+yt-dlp-menu - Interactive terminal frontend for yt-dlp powered by Charm gum
+
+USAGE:
+    yt-dlp-menu [OPTIONS] [URL ...]
+
+OPTIONS:
+    -h, --help       Show this help message and exit
+    -v, --version    Show version
+
+DEPENDENCIES:
+    yt-dlp           Core media downloader
+    gum              Charm CLI prompt toolkit
+    python3          Argument parsing and cookie handling
+    ffmpeg           (Recommended) For audio extraction / format merging
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  show_help
+  exit 0
+elif [[ "${1:-}" == "-v" || "${1:-}" == "--version" ]]; then
+  echo "yt-dlp-menu v1.0.0"
+  exit 0
+fi
+
+require_cmd yt-dlp
+require_cmd gum
+require_cmd python3
+
+seed_default_presets
+title
+
+if [[ $# -gt 0 ]]; then
+  urls=("$@")
+else
+  url_text="$(ask_url)"
+  [[ -n "$url_text" ]] || exit 0
+  mapfile -t urls < <(split_args "$url_text")
+fi
+(( ${#urls[@]} > 0 )) || exit 0
+
+configure_download_options
+
+gum style --foreground 212 "Command preview:"
+gum style --foreground 244 "$(preview_command)"
+
+if ! gum confirm "Start download?"; then
+  exit 0
+fi
+
+[[ -n "${output_dir:-}" ]] && mkdir -p "$output_dir"
+remember_output_dir "$output_dir"
+
+log_file="$log_dir/$(date '+%Y%m%d-%H%M%S').log"
+notify low "Download started"
+
+set +e
+gum spin --show-output --title "Downloading with yt-dlp..." -- yt-dlp "${args[@]}" "${urls[@]}" 2>&1 | tee "$log_file"
+status="${PIPESTATUS[0]}"
+set -e
+
+if [[ "$status" -ne 0 ]] && ! has_cookie_args && needs_browser_cookies; then
+  gum style --foreground 214 "YouTube asked for browser cookies. Retrying automatically."
+  if ! python_secretstorage_ready; then
+    gum style --foreground 244 "Browser cookie decryption support is missing: python-secretstorage python-jeepney"
+  fi
+  if browser="$(default_cookie_browser)"; then
+    browser_arg="$(cookie_browser_arg "$browser")"
+    args+=(--cookies-from-browser "$browser_arg")
+    {
+      printf '\n--- Retry with --cookies-from-browser %s ---\n' "$browser_arg"
+    } >>"$log_file"
+
+    set +e
+    gum spin --show-output --title "Retrying with $browser cookies..." -- yt-dlp "${args[@]}" "${urls[@]}" 2>&1 | tee -a "$log_file"
+    status="${PIPESTATUS[0]}"
+    set -e
+  else
+    gum style --foreground 196 "No browser cookie source was detected."
+  fi
+fi
+
+if [[ "$status" -eq 0 ]]; then
+  notify low "Download finished: $output_dir"
+  gum style --foreground 82 "Download finished"
+else
+  needs_browser_cookies && show_cookie_help
+  notify normal "Download failed. Log: $log_file"
+  gum style --foreground 196 "Download failed"
+fi
+
+gum style --foreground 244 "Log: $log_file"
+gum style --foreground 244 "Output: $output_dir"
+exit "$status"
