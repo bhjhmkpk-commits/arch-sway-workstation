@@ -20,10 +20,14 @@ An ultra-lightweight, blazing-fast (~350 MB idle RAM, 0.0% CPU) **Everforest-the
 
 This workstation runs on **pure Vanilla Arch Linux** in native **64-bit UEFI** mode:
 
-1. **Motherboard BIOS Settings (Crucial)**:
+1. **Motherboard BIOS Settings (Verified Safe Baseline)**:
    - Enter BIOS (press <kbd>Del</kbd> or <kbd>F2</kbd> on startup).
-   - Disable **CSM (Compatibility Support Module)** / set Boot Mode to **UEFI Only**.
-   - Ensure SATA Controller is set to **AHCI**.
+   - Set **CSM Support** to **`Enabled`**.
+   - Set **Video Option ROM** to **`Legacy`** *(⚠️ Never set Video to UEFI on HDMI to prevent black screens)*.
+   - Set **Storage Option ROM** to **`UEFI`**.
+   - Ensure **SATA Mode** is set to **`AHCI`**.
+   - Secure Boot: **`Disabled`**.
+   - For complete step-by-step instructions, see [**Clean Install & Dual-Boot Guide**](REINSTALL_DUALBOOT_GUIDE.md).
 2. **Boot the Arch Linux USB in UEFI Mode**:
    - Press <kbd>F11</kbd> or <kbd>F12</kbd> for the boot menu and choose `UEFI: <Your USB Name>`.
 3. **Launch the Installer**:
