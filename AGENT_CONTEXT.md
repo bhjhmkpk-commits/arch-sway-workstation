@@ -120,6 +120,20 @@
   * Set `/boot` to automount on-demand (`noauto,x-systemd.automount`).
 * **Permanent Solution**: Reinstalling in native **64-bit UEFI with GPT** to enable dual-booting with **Omarchy** and unlock 500+ MB/s SSD boot speeds.
 
+### 5. Wireless Phone Storage & Rclone VFS Deadlock Prevention
+* **CRITICAL RULE**: **NEVER set `--buffer-size > 0` when using `--vfs-cache-mode full`.**
+* **The Root Cause of Thunar Freezes**:
+  * An in-memory buffer (`--buffer-size 32M`) activates rclone's `AsyncReader`.
+  * When Thunar or Tumbler requests metadata/thumbnails for multiple files concurrently, `AsyncReader.StopBuffering()` and `downloader.stopAndClose()` deadlock on internal mutex lock (`internal/sync.(*Mutex).lockSlow`).
+  * The Linux kernel puts Thunar into an uninterruptible sleep (`D` state in `folio_wait_bit_common`), freezing the GUI.
+* **Permanent High-Performance Configuration**:
+  * `--buffer-size 0`: Absolutely mandatory to disable `AsyncReader` and eliminate the deadlock.
+  * `--vfs-read-chunk-size 16M` + `--vfs-read-chunk-size-limit off`: Fast disk-cached streaming without hundreds of tiny 2MB requests.
+  * `--ftp-concurrency 2` + `--transfers 1` + `--checkers 1`: Prevents Android FTP socket collisions and dropped connection copy errors.
+  * `--timeout 45s` + `--contimeout 15s` + `--low-level-retries 10`: Resilient against Wi-Fi packet drops without throwing copy errors.
+  * `--dir-cache-time 15m` + `--attr-timeout 10m`: Fast instant directory navigation.
+  * Thunar `/misc-thumbnail-max-file-size 20971520` (20MB): Prevents Tumbler from choking the FTP connection on large video files.
+
 ---
 
 ## 🔄 Reinstall & 1-Click Restoration Workflow

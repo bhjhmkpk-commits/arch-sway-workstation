@@ -110,21 +110,20 @@ sleep 0.2
 mkdir -p "$MOUNT_DIR"
 
 # Launch rclone mount as a managed user service with high-speed VFS caching and resilient connection limits
+# NOTE: --buffer-size MUST be 0 to disable AsyncReader and prevent deadlock/freeze with --vfs-cache-mode full
 systemd-run --user --unit=phone-mount --collect \
     rclone mount \
         ":ftp,host=${HOST},port=${PORT},user=anonymous,pass=_5VuALJ9M8jthLASrPcpJg:" \
         "$MOUNT_DIR" \
         --ftp-concurrency 2 \
-        --checkers 2 \
+        --checkers 1 \
         --transfers 1 \
         --vfs-cache-mode full \
         --vfs-cache-max-age 2h \
         --vfs-cache-max-size 10G \
         --vfs-read-chunk-size 16M \
         --vfs-read-chunk-size-limit off \
-        --vfs-read-ahead 64M \
-        --vfs-write-back 2s \
-        --buffer-size 32M \
+        --buffer-size 0 \
         --no-modtime \
         --no-checksum \
         --dir-cache-time 15m \
