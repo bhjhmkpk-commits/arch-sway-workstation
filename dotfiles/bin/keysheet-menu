@@ -59,6 +59,7 @@ ENTRIES=(
   "💾 [App] Interactive Disk Storage Usage Explorer (GDU)        →   \$mod + Ctrl + d|foot --app-id=gdu -e gdu ~"
   "📱 [App] Android Screen Mirror & Control (Scrcpy)             →   \$mod + a|scrcpy"
   "📱 [App] Phone Storage in Thunar (Wireless FTP/SFTP)          →   \$mod + Ctrl + m|~/.local/bin/phone-mount"
+  "📱 [App] Disconnect Phone Storage (Unmount ~/Phone)           →   \$mod + Ctrl + Shift + m|~/.local/bin/phone-mount -u"
   "📱 [App] Phone <> PC Clipboard Bridge (Web QR)                →   \$mod + Ctrl + p|foot --app-id=phone-clip -e ~/.local/bin/phone-clip"
   "📱 [App] LocalSend (Cross-Platform AirDrop)                   →   \$mod + Alt + l|localsend"
   "📱 [App] Universal Android Debloater (UAD)                    →   \$mod + Alt + a|uad-ng"

@@ -78,6 +78,7 @@ bindsym $mod+Ctrl+d exec $term --app-id=gdu -e gdu ~
 bindsym $mod+a exec scrcpy
 bindsym $mod+Mod1+a exec uad-ng
 bindsym $mod+Ctrl+m exec ~/.local/bin/phone-mount
+bindsym $mod+Ctrl+Shift+m exec ~/.local/bin/phone-mount -u
 bindsym $mod+Ctrl+p exec $term --app-id=phone-clip -e ~/.local/bin/phone-clip
 bindsym $mod+Mod1+l exec localsend
 

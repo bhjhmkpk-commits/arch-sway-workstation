@@ -29,6 +29,7 @@ ${Y}🎓 1. STUDENT, ACADEMIC & DOCUMENTS${RESET}
 
 ${Y}📱 2. ANDROID & MOBILE UTILITIES${RESET}
   ${C}\$mod + Ctrl + m${RESET} / ${C}phone-mount${RESET} Wireless phone storage in Thunar (Samsung style)
+  ${C}\$mod + Ctrl + Shift + m${RESET}       Disconnect & unmount phone storage (${DIM}phone-mount -u${RESET})
   ${C}\$mod + Ctrl + p${RESET} / ${C}phone-clip${RESET}  Wireless Phone <> PC 2-way clipboard bridge (QR code)
   ${C}\$mod + Alt + l${RESET}  / ${C}localsend${RESET}   Cross-device AirDrop (file & text sharing)
   ${C}scrcpy${RESET}                    60fps Android screen mirror & mouse/keyboard control

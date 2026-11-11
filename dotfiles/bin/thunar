@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📁 Arch Sway Workstation - Safe Thunar Launcher
+# Prevents Thunar from freezing if a wireless phone FTP mount has disconnected.
+# ==============================================================================
+
+PHONE_DIR="$HOME/Phone"
+if mountpoint -q "$PHONE_DIR" 2>/dev/null; then
+    # Test if mount is responsive within 0.5s
+    if ! timeout 0.5s stat -t "$PHONE_DIR" >/dev/null 2>&1; then
+        fusermount -u -z "$PHONE_DIR" 2>/dev/null || true
+        systemctl --user stop phone-mount 2>/dev/null || true
+    fi
+fi
+
+exec /usr/bin/thunar "$@"

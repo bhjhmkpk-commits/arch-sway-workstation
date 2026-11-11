@@ -84,7 +84,7 @@
   1. Press **`$mod + Ctrl + m`** (or run `phone-mount` in terminal).
   2. Enter the phone's address (it remembers it next time, so you only press Enter).
   3. **Done!** Thunar instantly opens your entire phone internal storage (DCIM, Downloads, Documents, Music, Android, etc.) right in the file manager sidebar, exactly like Samsung Quick Share or Link to Windows!
-  4. *Pro-Tip:* Right-click the folder in Thunar and select **"Add Bookmark"** — from then on, you can simply click it in Thunar's sidebar anytime your phone server is on!
+  4. *Disconnecting:* Simply tap "Stop Server" on your phone (auto-unmounts within 4s), or press **`$mod + Ctrl + Shift + m`** (`phone-mount -u`).
 
 ### 2. 1-Click Clipboard Sharing Between Phone & Laptop
 We provide two zero-bloat paths:

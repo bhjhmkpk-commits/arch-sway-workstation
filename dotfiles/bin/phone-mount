@@ -155,6 +155,30 @@ fi
 
 notify-send -a "Phone Storage" -i phone "Phone Connected!" "Mounted at ~/Phone with video streaming & thumbnails."
 
+# Auto-disconnect watchdog: continuously checks socket and automatically unmounts if FTP stops
+(
+    while mountpoint -q "$MOUNT_DIR" 2>/dev/null; do
+        sleep 4
+        REACHABLE=$(python3 -c "
+import socket
+try:
+    s = socket.socket()
+    s.settimeout(1.5)
+    s.connect(('$HOST', int('$PORT')))
+    s.close()
+    print('OK')
+except Exception:
+    print('FAIL')
+" 2>/dev/null)
+        if [[ "$REACHABLE" != "OK" ]]; then
+            fusermount -u -z "$MOUNT_DIR" 2>/dev/null || true
+            systemctl --user stop phone-mount 2>/dev/null || true
+            notify-send -a "Phone Storage" -i phone "Phone Disconnected" "Phone server stopped. Cleanly unmounted ~/Phone."
+            break
+        fi
+    done
+) >/dev/null 2>&1 &
+
 # Open Thunar and bring to focus
 thunar "$MOUNT_DIR" &
 sleep 0.3

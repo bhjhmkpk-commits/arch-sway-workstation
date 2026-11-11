@@ -19,6 +19,7 @@ ENTRIES=(
   "🔢 Galculator    │ Lightweight GTK scientific desktop calculator          │ Hotkey: \$mod+=  •  CLI: galculator|galculator"
   "📱 Scrcpy        │ 60fps Android screen mirror & mouse/keyboard control   │ Hotkey: \$mod+a  (over USB or Wi-Fi)|scrcpy"
   "📱 Phone Storage │ Wireless phone storage in Thunar (Samsung style)       │ Hotkey: \$mod+Ctrl+m  •  phone-mount|~/.local/bin/phone-mount"
+  "📱 Disconnect    │ Safely unmount ~/Phone wireless storage                │ Hotkey: \$mod+Ctrl+Shift+m  •  phone-mount -u|~/.local/bin/phone-mount -u"
   "📱 Phone Clip    │ Wireless Phone <> PC 2-way clipboard bridge (QR code)  │ Hotkey: \$mod+Ctrl+p  •  phone-clip|foot --app-id=phone-clip -e ~/.local/bin/phone-clip"
   "📱 LocalSend     │ Open-source AirDrop: fast wireless file & text send    │ Hotkey: \$mod+Alt+l  •  localsend|localsend"
   "📱 Debloater     │ Safely remove or disable vendor & carrier bloatware    │ Hotkey: \$mod+Alt+a  •  uad-ng|uad-ng"
