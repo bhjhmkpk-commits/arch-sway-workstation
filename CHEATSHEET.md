@@ -59,7 +59,7 @@
 | **Health**  | Wellbeing Eye Strain Menu | **`$mod + Alt + e`** | 20-20-20 rule & break timer settings |
 | **Session** | Lock Screen | **`$mod + Backspace`** or **`$mod + Ctrl + l`** | Secure Wayland swaylock |
 | **Session** | Reload Sway Config | **`$mod + Shift + r`** | In-place compositor reload |
-| **Session** | Exit Sway Dialog | **`$mod + Shift + e`** | Clean logout confirmation |
+| **Session** | Power / Exit Menu | **`$mod + Shift + e`** | Direct Power Off, Reboot, or Logout |
 | **Window**  | Close / Kill Window | **`$mod + w`** | Terminate active application |
 | **Window**  | Toggle Fullscreen | **`$mod + f`** | Dedicated fullscreen container |
 | **Window**  | Toggle Floating / Tiling | **`$mod + t`** | Float individual window |

@@ -60,4 +60,19 @@ for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo performa
 for e in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do echo performance > "$e" 2>/dev/null || true; done
 for b in /sys/devices/system/cpu/cpu*/power/energy_perf_bias; do echo performance > "$b" 2>/dev/null || true; done
 
+echo "==> 9. Optimizing shutdown timeouts (10s) and disabling battery daemons on desktop..."
+mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d
+cat << 'EOF' > /etc/systemd/system.conf.d/timeout.conf
+[Manager]
+DefaultTimeoutStopSec=10s
+DefaultTimeoutAbortSec=10s
+EOF
+cat << 'EOF' > /etc/systemd/user.conf.d/timeout.conf
+[Manager]
+DefaultTimeoutStopSec=10s
+DefaultTimeoutAbortSec=10s
+EOF
+systemctl daemon-reexec 2>/dev/null || true
+systemctl mask upower.service 2>/dev/null || true
+
 echo -e "\n\033[0;32m✓ System optimization complete! Resource usage minimized and essentials in place.\033[0m"

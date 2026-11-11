@@ -38,5 +38,10 @@ fi
 alias pacclean='sudo pacman -Rns $(pacman -Qtdq 2>/dev/null) 2>/dev/null'
 alias mirrors='sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist'
 
+# Instant Power Actions (ignore inhibitors, zero delay)
+alias shutdown='systemctl poweroff -i'
+alias poweroff='systemctl poweroff -i'
+alias reboot='systemctl reboot -i'
+
 # Clean Prompt
 PS1='[\u@\h \W]\$ '
