@@ -109,25 +109,33 @@ pkill -9 -f "rclone mount.*Phone" 2>/dev/null || true
 sleep 0.2
 mkdir -p "$MOUNT_DIR"
 
-# Launch rclone mount as a managed user service with VFS caching and safe connection limits
+# Launch rclone mount as a managed user service with high-speed VFS caching and resilient connection limits
 systemd-run --user --unit=phone-mount --collect \
     rclone mount \
         ":ftp,host=${HOST},port=${PORT},user=anonymous,pass=_5VuALJ9M8jthLASrPcpJg:" \
         "$MOUNT_DIR" \
-        --ftp-concurrency 4 \
+        --ftp-concurrency 2 \
         --checkers 2 \
-        --transfers 2 \
+        --transfers 1 \
         --vfs-cache-mode full \
         --vfs-cache-max-age 2h \
-        --vfs-read-chunk-size 2M \
-        --vfs-read-chunk-size-limit 64M \
-        --buffer-size 0 \
+        --vfs-cache-max-size 10G \
+        --vfs-read-chunk-size 16M \
+        --vfs-read-chunk-size-limit off \
+        --vfs-read-ahead 64M \
+        --vfs-write-back 2s \
+        --buffer-size 32M \
         --no-modtime \
-        --dir-cache-time 5m \
-        --timeout 10s \
-        --contimeout 5s \
-        --low-level-retries 2 \
+        --no-checksum \
+        --dir-cache-time 15m \
+        --attr-timeout 10m \
+        --timeout 45s \
+        --contimeout 15s \
+        --retries 3 \
+        --low-level-retries 10 \
         --allow-non-empty \
+        --log-file "$HOME/.config/phone-mount.log" \
+        --log-level NOTICE \
         >/dev/null 2>&1
 
 # Wait up to 3 seconds for mount to become ready and healthy

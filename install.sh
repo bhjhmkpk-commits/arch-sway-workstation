@@ -190,6 +190,10 @@ echo -e "${GREEN}✓ Host firewall active with LocalSend & Phone Clip ports open
 
 # 13. System Optimizations & Boot Speedups
 echo -e "\n${BLUE}⚡ Running workstation system & boot optimizations...${NC}"
+# Optimize Thunar remote file handling & thumbnailing (cap remote thumbnail choke to 20MB)
+if command -v xfconf-query >/dev/null 2>&1; then
+    xfconf-query -c thunar -p /misc-thumbnail-max-file-size -n -t int -s 20971520 2>/dev/null || xfconf-query -c thunar -p /misc-thumbnail-max-file-size -s 20971520 2>/dev/null || true
+fi
 sudo "$HOME/.local/bin/sys-optimize" || true
 
 echo -e "\n${GREEN}=================================================================${NC}
