@@ -134,6 +134,15 @@
   * `--dir-cache-time 15m` + `--attr-timeout 10m`: Fast instant directory navigation.
   * Thunar `/misc-thumbnail-max-file-size 20971520` (20MB): Prevents Tumbler from choking the FTP connection on large video files.
 
+### 6. Silent & Instant UKI Boot (Straight to Login Screen)
+* **Goal**: Zero bootloader menu wait, zero scrolling kernel/systemd text, zero splash interruption—seamless transition straight to `tuigreet` login screen.
+* **Configurations Applied**:
+  * `/boot/loader/loader.conf`: Set `timeout 0` and `console-mode max` to bypass the systemd-boot countdown entirely (hold `Space` on boot if manual menu is ever needed).
+  * `/etc/kernel/cmdline`: Embedded `quiet loglevel=3 systemd.show_status=auto rd.udev.log_level=3 vt.global_cursor_default=0` to silence kernel device probes and systemd `[ OK ]` status lines.
+  * `/etc/mkinitcpio.conf`: Enforced Early KMS with `MODULES=(i915)` so Intel HD 530 modesets immediately without text-mode jumping or display flicker.
+  * `/etc/mkinitcpio.d/linux.preset`: Removed `--splash` bitmap.
+  * Regenerated atomic Unified Kernel Image: `/boot/EFI/Linux/arch-linux.efi`.
+
 ---
 
 ## 🔄 Reinstall & 1-Click Restoration Workflow
