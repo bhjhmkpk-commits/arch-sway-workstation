@@ -17,7 +17,8 @@
         "custom/nightlight",
         "network",
         "cpu",
-        "memory"
+        "memory",
+        "battery"
     ],
     "sway/workspaces": {
         "disable-scroll": true,
@@ -164,6 +165,18 @@
         "on-scroll-down": "~/.local/bin/nightlight dec",
         "smooth-scrolling-threshold": 1.0,
         "tooltip": true
+    },
+    "battery": {
+        "states": {
+            "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": "⚡ {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-alt": "{time} {icon}",
+        "format-icons": ["", "", "", "", ""]
     },
     "clock": {
         "format": "\udb80\udced {:%Y-%m-%d  \udb82\udd54 %I:%M %p}",

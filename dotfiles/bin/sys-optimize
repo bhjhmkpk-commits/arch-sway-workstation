@@ -73,7 +73,14 @@ DefaultTimeoutStopSec=10s
 DefaultTimeoutAbortSec=10s
 EOF
 systemctl daemon-reexec 2>/dev/null || true
-systemctl mask upower.service 2>/dev/null || true
+
+# Battery management (mask upower on desktop PC to save RAM; enable on laptop)
+if [ ! -d /sys/class/power_supply/BAT0 ] && [ ! -d /sys/class/power_supply/BAT1 ]; then
+    systemctl mask upower.service 2>/dev/null || true
+else
+    systemctl unmask upower.service 2>/dev/null || true
+    systemctl enable --now upower.service 2>/dev/null || true
+fi
 
 echo "==> 10. Boot time optimizations (instant silent boot, disable network wait-online)..."
 systemctl disable NetworkManager-wait-online.service 2>/dev/null || true

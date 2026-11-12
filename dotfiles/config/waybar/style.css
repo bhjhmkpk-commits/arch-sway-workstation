@@ -36,7 +36,7 @@ window#waybar.empty #window {
     padding: 0;
     margin: 0;
 }
-#window, #cpu, #memory, #network, #pulseaudio, #clock, #custom-nightlight, #custom-brightness, #custom-wellbeing {
+#window, #cpu, #memory, #battery, #network, #pulseaudio, #clock, #custom-nightlight, #custom-brightness, #custom-wellbeing {
     padding: 0 14px;
     margin: 3px 3px;
     border-radius: 6px;
@@ -60,6 +60,10 @@ window#waybar.empty #window {
 }
 #cpu { color: #ea8a8c; }
 #memory { color: #dda5be; }
+#battery { color: #b0d288; }
+#battery.charging, #battery.plugged { color: #8bc2ba; }
+#battery.warning:not(.charging) { color: #e4c58a; }
+#battery.critical:not(.charging) { color: #ea8a8c; }
 #network { color: #8bc2ba; }
 #pulseaudio { color: #b0d288; }
 #custom-brightness { color: #e4c58a; }

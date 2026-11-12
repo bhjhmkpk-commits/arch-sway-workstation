@@ -14,6 +14,17 @@ font pango:JetBrainsMono Nerd Font 12
 output * bg #23382f solid_color
 output HDMI-A-1 mode 1920x1080@60Hz
 
+# Universal Input & Touchpad Configuration (Plug & Play on Laptops)
+input type:touchpad {
+    dwt enabled
+    tap enabled
+    natural_scroll enabled
+    middle_emulation enabled
+}
+
+# Laptop Lid Switch (Auto-lock screen on lid close)
+bindswitch --reload --locked lid:on exec swaylock -f
+
 # Gaps & Borders
 default_border pixel 2
 default_floating_border pixel 2

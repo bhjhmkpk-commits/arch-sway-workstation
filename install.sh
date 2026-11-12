@@ -50,6 +50,9 @@ if echo "$GPU_INFO" | grep -qi "intel"; then
 elif echo "$GPU_INFO" | grep -qiE "amd|radeon"; then
     echo -e "${GREEN}✓ AMD GPU detected. Installing AMD Vulkan & Mesa drivers...${NC}"
     sudo pacman -S --needed --noconfirm vulkan-radeon libva-mesa-driver
+elif echo "$GPU_INFO" | grep -qi "nvidia"; then
+    echo -e "${GREEN}✓ NVIDIA GPU detected. Installing NVIDIA utilities & VA-API drivers...${NC}"
+    sudo pacman -S --needed --noconfirm nvidia-utils libva-nvidia-driver 2>/dev/null || sudo pacman -S --needed --noconfirm nvidia-utils
 else
     echo -e "${YELLOW}Generic / VM graphics detected. Standard Mesa is active.${NC}"
 fi
