@@ -101,3 +101,40 @@ We provide two zero-bloat paths:
 * **On Phone:** Install **LocalSend** (F-Droid / Play Store).
 * **Usage:** Highlight any text or select any photo on your phone, tap **Share → LocalSend → Arch Laptop**. Transferred in less than 1 second!
 
+---
+
+## 🛡️ Safe System Updates & 1-Click Rollback (`arch-update`)
+
+Your workstation includes a dedicated, bulletproof update management suite built specifically for **Btrfs + UKI + systemd-boot**.
+
+### 1. Run Safe System Update
+Run in terminal:
+```bash
+arch-update
+```
+* **What it does automatically:**
+  1. **Pre-flight Health Checks:** Verifies internet connectivity, checks ESP (`/boot`) space (>100MB), and checks Root space (>4GB).
+  2. **Arch Official News Check:** Fetches `archlinux.org/feeds/news/` and warns you if manual intervention is required.
+  3. **Atomic Btrfs Snapshot:** Creates a read-only root snapshot in `/.snapshots/@_<timestamp>`.
+  4. **UKI Kernel Backup:** Backs up `/boot/EFI/Linux/arch-linux.efi` to `arch-linux.efi.bak`.
+  5. **Keyring Refresh & Full Update:** Refreshes `archlinux-keyring` and runs `yay -Syu` (official repos + AUR).
+  6. **Boot Image Verification:** Verifies both default and fallback UKIs (`arch-linux.efi` and `arch-linux-fallback.efi`).
+  7. **System Maintenance:** Scans `/etc` for `.pacnew` files and cleans old package cache (`paccache -rk2`).
+  8. **Reboot Detector:** Checks if the kernel was replaced and advises a reboot.
+
+### 2. Instant 1-Click System Rollback
+If an update ever causes an issue, restore your exact previous working state in seconds:
+```bash
+arch-rollback
+# or: arch-update --rollback
+```
+* Select a snapshot from the interactive menu.
+* **100% Personal Data Safety:** Because `/home` is on an independent Btrfs subvolume (`@home`), rolling back the system never touches your personal files, browser tabs, or downloads!
+
+### 3. List Snapshots or Dry-Run
+```bash
+arch-update --snapshots    # List all pre-update snapshots
+arch-update --dry-run      # Preview pending updates and news without changing anything
+arch-update --force        # Force update checks even if 0 updates are pending
+```
+

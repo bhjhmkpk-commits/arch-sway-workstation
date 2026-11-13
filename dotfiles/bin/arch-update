@@ -1,0 +1,416 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🛡️ Arch Sway Workstation - Safe Arch Linux Update & Rollback Utility
+#
+# Complete update management for Arch Linux + UKI + Btrfs:
+# 1. Pre-flight checks (connectivity, ESP & Root disk space)
+# 2. Arch Linux Official RSS News check (warns on manual intervention)
+# 3. Automatic Btrfs root snapshot in /.snapshots/
+# 4. Atomic UKI backup in /boot/EFI/Linux/arch-linux.efi.bak
+# 5. Full system update (Official packages + AUR via yay)
+# 6. Post-update verification (UKI rebuild check, .pacnew scan, paccache cleanup)
+# 7. Built-in 1-command rollback: 'arch-update --rollback' (or 'arch-rollback')
+# ==============================================================================
+
+set -eo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+# Determine non-root user for yay (never run yay as root)
+if [ "$EUID" -eq 0 ]; then
+    CURRENT_USER="${SUDO_USER:-$USER}"
+    SUDO_CMD=""
+else
+    CURRENT_USER="$USER"
+    SUDO_CMD="sudo"
+fi
+
+RUN_AS_USER="sudo -u $CURRENT_USER"
+
+# ------------------------------------------------------------------------------
+# Helper: Print styled messages
+# ------------------------------------------------------------------------------
+info() {
+    echo -e "${BLUE}${BOLD}[*]${NC} $1"
+}
+
+success() {
+    echo -e "${GREEN}${BOLD}[✓]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}${BOLD}[!]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}${BOLD}[✗]${NC} $1"
+}
+
+# ------------------------------------------------------------------------------
+# Ensure Snapshot Mountpoint Exists
+# ------------------------------------------------------------------------------
+ensure_snapshots_mounted() {
+    if ! mountpoint -q /.snapshots; then
+        $SUDO_CMD mkdir -p /.snapshots
+        $SUDO_CMD chmod 700 /.snapshots
+        $SUDO_CMD mount -o compress=zstd:3,subvol=@snapshots /dev/sda2 /.snapshots 2>/dev/null || true
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# Action: List Snapshots
+# ------------------------------------------------------------------------------
+list_snapshots() {
+    ensure_snapshots_mounted
+    echo -e "\n${BOLD}${CYAN}=== Available Btrfs System Snapshots (/.snapshots) ===${NC}"
+    local count=0
+    for snap in $(ls -1td /.snapshots/@_* 2>/dev/null); do
+        local name=$(basename "$snap")
+        local snap_date=$(stat -c "%y" "$snap" | cut -d'.' -f1)
+        echo -e "  ${GREEN}•${NC} ${BOLD}${name}${NC} (Created: ${snap_date})"
+        ((count++))
+    done
+    if [ "$count" -eq 0 ]; then
+        echo -e "  ${YELLOW}No pre-update snapshots found in /.snapshots${NC}"
+    fi
+    echo ""
+}
+
+# ------------------------------------------------------------------------------
+# Action: Rollback Subcommand
+# ------------------------------------------------------------------------------
+do_rollback() {
+    echo -e "\n${BOLD}${RED}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}${RED}║           ARCH SYSTEM SNAPSHOT ROLLBACK UTILITY            ║${NC}"
+    echo -e "${BOLD}${RED}╚════════════════════════════════════════════════════════════╝${NC}\n"
+    
+    ensure_snapshots_mounted
+    
+    local snapshots=($(ls -1td /.snapshots/@_* 2>/dev/null))
+    if [ ${#snapshots[@]} -eq 0 ]; then
+        error "No snapshots found in /.snapshots! Cannot rollback."
+        exit 1
+    fi
+
+    echo -e "Select a snapshot to restore the system root (${BOLD}@${NC}) to:"
+    echo -e "${YELLOW}Note: Your /home subvolume, personal files, and browser data are untouched!${NC}\n"
+
+    local chosen_snap=""
+    if command -v gum >/dev/null 2>&1; then
+        local choices=()
+        for s in "${snapshots[@]}"; do
+            choices+=("$(basename "$s")")
+        done
+        chosen_snap=$(gum choose "${choices[@]}" "Cancel")
+        if [ "$chosen_snap" = "Cancel" ] || [ -z "$chosen_snap" ]; then
+            echo "Rollback cancelled."
+            exit 0
+        fi
+        if ! gum confirm "Are you sure you want to rollback to snapshot: $chosen_snap?"; then
+            echo "Rollback cancelled."
+            exit 0
+        fi
+    else
+        select snap in "${snapshots[@]}" "Cancel"; do
+            if [ "$snap" = "Cancel" ] || [ -z "$snap" ]; then
+                echo "Rollback cancelled."
+                exit 0
+            fi
+            chosen_snap=$(basename "$snap")
+            break
+        done
+        read -rp "Are you sure you want to rollback to $chosen_snap? [y/N]: " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            echo "Rollback cancelled."
+            exit 0
+        fi
+    fi
+
+    info "Mounting Btrfs root filesystem (subvolid=5)..."
+    local restore_dir
+    restore_dir=$(mktemp -d /mnt/btrfs-restore.XXXXXX)
+    $SUDO_CMD mount -o subvolid=5 /dev/sda2 "$restore_dir"
+
+    local broken_backup="@_broken_$(date +%Y%m%d_%H%M%S)"
+    info "Moving active root subvolume (@) to $broken_backup..."
+    $SUDO_CMD mv "$restore_dir/@" "$restore_dir/$broken_backup"
+
+    info "Creating new read-write root subvolume (@) from $chosen_snap..."
+    $SUDO_CMD btrfs subvolume snapshot "$restore_dir/@snapshots/$chosen_snap" "$restore_dir/@"
+
+    # Restore UKI backup if available
+    if [ -f /boot/EFI/Linux/arch-linux.efi.bak ]; then
+        info "Restoring previous UKI kernel backup (/boot/EFI/Linux/arch-linux.efi)..."
+        $SUDO_CMD cp /boot/EFI/Linux/arch-linux.efi.bak /boot/EFI/Linux/arch-linux.efi
+    fi
+
+    $SUDO_CMD umount "$restore_dir"
+    rmdir "$restore_dir"
+
+    echo -e "\n${GREEN}${BOLD}════════════════════════════════════════════════════════════${NC}"
+    success "System successfully rolled back to snapshot: ${BOLD}${chosen_snap}${NC}!"
+    echo -e "${YELLOW}A reboot is required to enter the restored state.${NC}"
+    echo -e "${GREEN}${BOLD}════════════════════════════════════════════════════════════${NC}\n"
+
+    read -rp "Do you want to reboot now? [y/N]: " do_reboot
+    if [[ "$do_reboot" =~ ^[Yy]$ ]]; then
+        $SUDO_CMD reboot
+    fi
+    exit 0
+}
+
+# ------------------------------------------------------------------------------
+# Check Arch Linux News Feed for Manual Intervention
+# ------------------------------------------------------------------------------
+check_arch_news() {
+    info "Checking official Arch Linux news for manual intervention notices..."
+    python3 - << 'EOF'
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone, timedelta
+import sys
+
+url = 'https://archlinux.org/feeds/news/'
+req = urllib.request.Request(url, headers={'User-Agent': 'ArchWorkstationSafeUpdate/1.0'})
+try:
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        data = resp.read()
+    root = ET.fromstring(data)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=21)
+    
+    urgent_items = []
+    recent_items = []
+    
+    for item in root.findall('.//item'):
+        title = item.find('title').text or ''
+        pub_str = item.find('pubDate').text or ''
+        link = item.find('link').text or ''
+        
+        try:
+            dt = datetime.strptime(pub_str[:25].strip(), "%a, %d %b %Y %H:%M:%S").replace(tzinfo=timezone.utc)
+        except Exception:
+            dt = datetime.now(timezone.utc)
+            
+        is_urgent = any(k in title.lower() for k in ['intervention', 'manual', 'breaking', 'deprecat', 'rebuild', 'vulnerability'])
+        
+        if is_urgent:
+            urgent_items.append((dt.strftime('%Y-%m-%d'), title, link))
+        elif dt >= cutoff and len(recent_items) < 2:
+            recent_items.append((dt.strftime('%Y-%m-%d'), title, link))
+            
+    if urgent_items:
+        print("\033[1;33m⚠️  IMPORTANT ARCH LINUX NEWS (MANUAL INTERVENTION POSSIBLE):\033[0m")
+        for dt, title, link in urgent_items[:3]:
+            print(f"  \033[0;31m• [{dt}]\033[0m \033[1m{title}\033[0m\n    \033[0;34m-> {link}\033[0m")
+        print("")
+    elif recent_items:
+        print("\033[0;32m✓ Recent Arch News:\033[0m")
+        for dt, title, link in recent_items:
+            print(f"  • [{dt}] {title} ({link})")
+    else:
+        print("\033[0;32m✓ No urgent manual intervention notices on archlinux.org.\033[0m")
+except Exception as e:
+    print(f"\033[0;33m[!] Could not connect to Arch news feed (continuing safely): {e}\033[0m")
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# Check Dispatcher
+# ------------------------------------------------------------------------------
+SCRIPT_NAME=$(basename "$0")
+if [ "$SCRIPT_NAME" = "arch-rollback" ] || [ "$1" = "--rollback" ] || [ "$1" = "-r" ]; then
+    do_rollback
+fi
+
+if [ "$1" = "--snapshots" ] || [ "$1" = "-l" ]; then
+    list_snapshots
+    exit 0
+fi
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo -e "${BOLD}Usage:${NC} $0 [OPTION]"
+    echo ""
+    echo "Options:"
+    echo "  (none)            Run full safe system update (Official repos + AUR)"
+    echo "  -f, --force       Force update execution even if 0 updates are pending"
+    echo "  -r, --rollback    Launch interactive Btrfs root snapshot rollback"
+    echo "  -l, --snapshots   List all available pre-update snapshots in /.snapshots"
+    echo "  -d, --dry-run     Check for news and pending updates without installing"
+    echo "  -h, --help        Show this help message"
+    exit 0
+fi
+
+FORCE_UPDATE=false
+DRY_RUN=false
+for arg in "$@"; do
+    case "$arg" in
+        -f|--force) FORCE_UPDATE=true ;;
+        -d|--dry-run) DRY_RUN=true ;;
+    esac
+done
+
+# ==============================================================================
+# MAIN SAFE UPDATE WORKFLOW
+# ==============================================================================
+
+echo -e "\n${BOLD}${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BOLD}${CYAN}║         ARCH SWAY WORKSTATION - SAFE SYSTEM UPDATE         ║${NC}"
+echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════════╝${NC}\n"
+
+# 1. Connectivity check
+info "Checking internet connectivity..."
+if ! ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 && ! curl -s --head https://archlinux.org >/dev/null 2>&1; then
+    error "No internet connection detected. Please connect to Wi-Fi / Ethernet first."
+    exit 1
+fi
+success "Network connection verified."
+
+# 2. Disk space checks
+info "Checking available storage..."
+ROOT_AVAIL_KB=$(df -k / | awk 'NR==2 {print $4}')
+BOOT_AVAIL_KB=$(df -k /boot | awk 'NR==2 {print $4}')
+
+# 4GB root minimum (4194304 KB), 100MB boot minimum (102400 KB)
+if [ "$ROOT_AVAIL_KB" -lt 4194304 ]; then
+    error "Insufficient disk space on Root (/)! Less than 4 GB available. Free up space before updating."
+    exit 1
+fi
+
+if [ "$BOOT_AVAIL_KB" -lt 102400 ]; then
+    error "Insufficient disk space on /boot (ESP)! Less than 100 MB available for UKI images."
+    exit 1
+fi
+success "Disk space healthy: Root $(df -h / | awk 'NR==2 {print $4}') available, /boot $(df -h /boot | awk 'NR==2 {print $4}') available."
+
+# 3. Check official Arch Linux News
+check_arch_news
+
+# 4. Check for pending updates
+info "Checking for pending repository & AUR updates..."
+OFFICIAL_UPDATES=$(checkupdates 2>/dev/null || true)
+AUR_UPDATES=$($RUN_AS_USER yay -Qua 2>/dev/null || true)
+
+OFFICIAL_COUNT=$(echo "$OFFICIAL_UPDATES" | grep -c . || true)
+AUR_COUNT=$(echo "$AUR_UPDATES" | grep -c . || true)
+TOTAL_COUNT=$((OFFICIAL_COUNT + AUR_COUNT))
+
+echo -e "\n${BOLD}Pending Updates:${NC} ${GREEN}${OFFICIAL_COUNT}${NC} official packages, ${CYAN}${AUR_COUNT}${NC} AUR packages (Total: ${BOLD}${TOTAL_COUNT}${NC})"
+
+if [ "$TOTAL_COUNT" -gt 0 ]; then
+    if [ "$OFFICIAL_COUNT" -gt 0 ]; then
+        echo -e "\n${BOLD}Official Updates Preview:${NC}"
+        echo "$OFFICIAL_UPDATES" | head -n 10 | sed 's/^/  • /'
+        if [ "$OFFICIAL_COUNT" -gt 10 ]; then
+            echo "  ... and $((OFFICIAL_COUNT - 10)) more"
+        fi
+    fi
+    if [ "$AUR_COUNT" -gt 0 ]; then
+        echo -e "\n${BOLD}AUR Updates Preview:${NC}"
+        echo "$AUR_UPDATES" | head -n 5 | sed 's/^/  • /'
+    fi
+fi
+
+if [ "$TOTAL_COUNT" -eq 0 ] && [ "$FORCE_UPDATE" = false ]; then
+    echo -e "\n${GREEN}${BOLD}✓ System is already completely up to date!${NC}"
+    echo -e "Use ${CYAN}arch-update --force${NC} to run keyring refresh and cache maintenance anyway.\n"
+    exit 0
+fi
+
+if [ "$DRY_RUN" = true ]; then
+    echo -e "\n${YELLOW}Dry-run mode finished. No changes made.${NC}\n"
+    exit 0
+fi
+
+# Confirm update
+echo ""
+if command -v gum >/dev/null 2>&1; then
+    if ! gum confirm "Proceed with snapshot and system update?"; then
+        echo "Update cancelled."
+        exit 0
+    fi
+else
+    read -rp "Proceed with snapshot and system update? [Y/n]: " proceed
+    if [[ "$proceed" =~ ^[Nn]$ ]]; then
+        echo "Update cancelled."
+        exit 0
+    fi
+fi
+
+# 5. Pre-update Safety: Btrfs Snapshot + UKI Backup
+ensure_snapshots_mounted
+SNAPSHOT_TAG="@_$(date +%Y-%m-%d_%H%M%S)"
+info "Creating atomic pre-update Btrfs snapshot (/.snapshots/${SNAPSHOT_TAG})..."
+$SUDO_CMD btrfs subvolume snapshot -r / "/.snapshots/${SNAPSHOT_TAG}"
+success "Pre-update snapshot created: ${SNAPSHOT_TAG}"
+
+# Prune older snapshots (keep latest 5)
+info "Rotating snapshots (keeping the latest 5)..."
+OLD_SNAPS=$(ls -1td /.snapshots/@_* 2>/dev/null | tail -n +6 || true)
+for old in $OLD_SNAPS; do
+    echo "  Deleting old snapshot: $(basename "$old")"
+    $SUDO_CMD btrfs subvolume delete "$old" >/dev/null 2>&1 || true
+done
+
+# Backup UKI
+if [ -f /boot/EFI/Linux/arch-linux.efi ]; then
+    info "Backing up current working UKI to /boot/EFI/Linux/arch-linux.efi.bak..."
+    $SUDO_CMD cp /boot/EFI/Linux/arch-linux.efi /boot/EFI/Linux/arch-linux.efi.bak
+    success "UKI safety backup created."
+fi
+
+# 6. Keyring refresh first to prevent signature verification failure
+info "Ensuring archlinux-keyring is current..."
+$SUDO_CMD pacman -Sy --needed --noconfirm archlinux-keyring
+
+# 7. Execute Full System Update (Official + AUR via yay as non-root user)
+info "Executing full system upgrade (pacman + AUR)..."
+$RUN_AS_USER yay -Syu
+
+# 8. Verify Kernel UKIs
+info "Verifying Unified Kernel Images (UKIs)..."
+if [ ! -f /boot/EFI/Linux/arch-linux.efi ] || [ ! -f /boot/EFI/Linux/arch-linux-fallback.efi ]; then
+    warn "Missing default or fallback UKI. Regenerating via mkinitcpio..."
+    $SUDO_CMD mkinitcpio -P
+fi
+success "Default UKI and Fallback UKI verified in /boot/EFI/Linux/."
+
+# 9. Scan for .pacnew configuration files
+info "Scanning /etc for .pacnew files..."
+PACNEWS=$(find /etc -name "*.pacnew" 2>/dev/null || true)
+if [ -n "$PACNEWS" ]; then
+    echo -e "\n${YELLOW}${BOLD}⚠️  Configuration changes detected (.pacnew files):${NC}"
+    echo "$PACNEWS" | sed 's/^/  • /'
+    echo -e "${YELLOW}Review and merge them when convenient using: ${BOLD}pacdiff${NC}\n"
+else
+    success "No .pacnew configuration conflicts found."
+fi
+
+# 10. Clean old package caches safely (retain last 2 versions)
+info "Pruning old package cache (retaining 2 recent versions for rollback)..."
+$SUDO_CMD paccache -rk2 >/dev/null 2>&1 || true
+$SUDO_CMD paccache -ruk0 >/dev/null 2>&1 || true
+success "Package cache pruned."
+
+# 11. Check if Reboot is Recommended
+RUNNING_KERNEL="$(uname -r)"
+if [ ! -d "/usr/lib/modules/${RUNNING_KERNEL}" ]; then
+    echo -e "\n${RED}${BOLD}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}${BOLD}║           REBOOT REQUIRED: LINUX KERNEL UPDATED            ║${NC}"
+    echo -e "${RED}${BOLD}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${YELLOW}The running kernel (${RUNNING_KERNEL}) was replaced by an updated version.${NC}"
+    echo -e "A system reboot is required to load the new kernel and drivers.\n"
+    read -rp "Do you want to reboot now? [y/N]: " do_reboot
+    if [[ "$do_reboot" =~ ^[Yy]$ ]]; then
+        $SUDO_CMD reboot
+    fi
+else
+    echo -e "\n${GREEN}${BOLD}════════════════════════════════════════════════════════════${NC}"
+    success "Arch Linux safe update completed successfully! System is 100% up to date."
+    echo -e "${GREEN}${BOLD}════════════════════════════════════════════════════════════${NC}\n"
+fi

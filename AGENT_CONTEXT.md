@@ -142,6 +142,9 @@
   * `/etc/mkinitcpio.conf`: Enforced Early KMS with `MODULES=(i915)` so Intel HD 530 modesets immediately without text-mode jumping or display flicker.
   * `/etc/mkinitcpio.d/linux.preset`: Removed `--splash` bitmap.
   * Regenerated atomic Unified Kernel Image: `/boot/EFI/Linux/arch-linux.efi`.
+  * Enabled `arch-linux-fallback.efi` preset in `/etc/mkinitcpio.d/linux.preset` with `-S autodetect` for disaster recovery.
+  * Created `@snapshots` Btrfs subvolume mounted at `/.snapshots` (`chmod 700`) with fstab integration.
+  * Added `arch-update` & `arch-rollback`: Custom safe update utility with pre-flight checks, Arch news checks, atomic Btrfs snapshotting, UKI backup, AUR sync, and 1-click rollback.
 
 ---
 

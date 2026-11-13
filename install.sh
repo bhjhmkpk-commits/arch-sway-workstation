@@ -112,6 +112,8 @@ chmod +x "$HOME/.local/bin/"*
 sudo ln -sf "$HOME/.local/bin/sys-optimize" "/usr/local/bin/sys-optimize"
 sudo ln -sf "$HOME/.local/bin/brave-origin" "/usr/local/bin/brave-origin"
 sudo ln -sf "$HOME/.local/bin/yt-dlp-menu" "/usr/local/bin/yt-dlp-menu"
+sudo ln -sf "$HOME/.local/bin/arch-update" "/usr/local/bin/arch-update"
+sudo ln -sf "$HOME/.local/bin/arch-update" "/usr/local/bin/arch-rollback"
 
 # Deploy Polkit rules for passwordless Ventoy
 if [ -f "$SCRIPT_DIR/dotfiles/config/polkit-1/50-ventoy.rules" ]; then

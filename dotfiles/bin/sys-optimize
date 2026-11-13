@@ -114,12 +114,22 @@ if [ -f /etc/mkinitcpio.conf ] && lspci -k 2>/dev/null | grep -qi "intel"; then
         NEED_MKINITCPIO=true
     fi
 fi
-if [ -f /etc/mkinitcpio.d/linux.preset ] && grep -q 'default_options="--splash' /etc/mkinitcpio.d/linux.preset; then
-    sed -i 's/^default_options="--splash.*"/default_options=""/' /etc/mkinitcpio.d/linux.preset
-    NEED_MKINITCPIO=true
+if [ -f /etc/mkinitcpio.d/linux.preset ]; then
+    if grep -q 'default_options="--splash' /etc/mkinitcpio.d/linux.preset; then
+        sed -i 's/^default_options="--splash.*"/default_options=""/' /etc/mkinitcpio.d/linux.preset
+        NEED_MKINITCPIO=true
+    fi
+    if ! grep -q "PRESETS=('default' 'fallback')" /etc/mkinitcpio.d/linux.preset; then
+        sed -i "s/^PRESETS=.*/PRESETS=('default' 'fallback')/" /etc/mkinitcpio.d/linux.preset
+        sed -i 's/^#fallback_options="-S autodetect"/fallback_options="-S autodetect"/' /etc/mkinitcpio.d/linux.preset
+        NEED_MKINITCPIO=true
+    fi
+fi
+if [ -f /boot/loader/loader.conf ] && grep -q '^timeout 0' /boot/loader/loader.conf; then
+    sed -i 's/^timeout .*/timeout 3/' /boot/loader/loader.conf
 fi
 if [ "$NEED_MKINITCPIO" = true ]; then
-    echo "==> Rebuilding UKI with silent parameters and Early KMS..."
+    echo "==> Rebuilding UKI with silent parameters, Early KMS, and Fallback rescue image..."
     mkinitcpio -P 2>/dev/null || true
 fi
 

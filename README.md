@@ -110,6 +110,7 @@ The script will:
 - **Audio Routing**: `PipeWire` + `WirePlumber` + `pamixer` + `pavucontrol` (right-click Waybar volume icon).
 - **Screenshots & Annotations**: `Satty` (smart floating window, yellow highlighter, arrows, text, blur tool).
 - **Power Management**: `swayidle` 2-stage display sleep (turns off monitor after 5 min, locks after 15 min).
+- **Safe Updates & Rollback**: `arch-update` & `arch-rollback` (automatic pre-update Btrfs snapshots, UKI verification, Arch news check, and 1-click restore).
 
 ---
 
