@@ -92,9 +92,9 @@ fi
 # Configure systemd-boot for dual-boot (4s menu timeout with Windows detection)
 if [ -f /boot/loader/loader.conf ]; then
     if grep -q "^timeout" /boot/loader/loader.conf; then
-        sed -i "s/^timeout.*/timeout 4/" /boot/loader/loader.conf
+        sed -i "s/^timeout.*/timeout 5/" /boot/loader/loader.conf
     else
-        echo "timeout 4" >> /boot/loader/loader.conf
+        echo "timeout 5" >> /boot/loader/loader.conf
     fi
     if grep -q "^console-mode" /boot/loader/loader.conf; then
         sed -i "s/^console-mode.*/console-mode auto/" /boot/loader/loader.conf
