@@ -3,9 +3,9 @@ Version=1.0
 Type=Application
 Name=Gmail
 Comment=Gmail Web Application
-Exec=chromium --app="https://mail.google.com" --name="webapp-gmail" --class="WebApp-gmail"
+Exec=brave-origin --app="https://mail.google.com" --name="webapp-gmail" --class="WebApp-gmail"
 Icon=webapp-gmail
 Terminal=false
 StartupNotify=true
 Categories=Network;WebApplication;
-StartupWMClass=chrome-gmail
+StartupWMClass=brave-gmail

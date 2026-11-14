@@ -3,9 +3,9 @@ Version=1.0
 Type=Application
 Name=ChatGPT
 Comment=ChatGPT Web Application
-Exec=chromium --app="https://chatgpt.com" --name="webapp-chatgpt" --class="WebApp-chatgpt"
+Exec=brave-origin --app="https://chatgpt.com" --name="webapp-chatgpt" --class="WebApp-chatgpt"
 Icon=webapp-chatgpt
 Terminal=false
 StartupNotify=true
 Categories=Network;WebApplication;
-StartupWMClass=chrome-chatgpt
+StartupWMClass=brave-chatgpt

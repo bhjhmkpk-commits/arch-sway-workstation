@@ -80,8 +80,8 @@
    * Smooth blue light warmth filtering via `wlsunset`.
    * Hotkeys: `$mod + n` (Toggle night light) • `$mod + Shift + n` (Cycle warmth).
 8. **Web Application PWA Suite (`webapp`)**:
-   * Standalone, borderless native web apps with custom 512×512 icons:
-   * Gemini (`$mod+Alt+g`), ChatGPT (`$mod+Alt+c`), Claude (`$mod+Alt+k`), WhatsApp (`$mod+Alt+w`), Gmail (`$mod+Alt+m`), YouTube Music (`$mod+Shift+m`), YT-DLP Menu (`$mod+y`).
+   * Standalone, borderless native web apps powered by `brave-origin --app` (shares logins with Brave, native ad-blocking via Shields, VA-API hardware acceleration) with custom 512×512 icons:
+   * Gemini (`$mod+Alt+g`), ChatGPT (`$mod+Alt+c`), Claude (`$mod+Alt+k`), WhatsApp (`$mod+Alt+w`), Gmail (`$mod+Alt+m`), YouTube (`$mod+Shift+y`), YouTube Music (`$mod+Shift+m`), YT-DLP Menu (`$mod+y`).
 
 ---
 
@@ -145,6 +145,11 @@
   * Enabled `arch-linux-fallback.efi` preset in `/etc/mkinitcpio.d/linux.preset` with `-S autodetect` for disaster recovery.
   * Created `@snapshots` Btrfs subvolume mounted at `/.snapshots` (`chmod 700`) with fstab integration.
   * Added `arch-update` & `arch-rollback`: Custom safe update utility with pre-flight checks, Arch news checks, atomic Btrfs snapshotting, UKI backup, AUR sync, and 1-click rollback.
+
+### 7. Dual-Browser Architecture & Web App Ecosystem
+* **Default Privacy & Workhorse Browser**: Brave Browser (`brave-origin`) is the system default (`$mod + b`), configured via `xdg-settings` and `~/.config/mimeapps.list`. Provides built-in Shields ad-blocking (including YouTube video ads), Brave Sync across devices, and native Wayland hardware video decoding via Intel VA-API (`VaapiVideoDecodeLinuxGL`).
+* **Secondary Clean Browser**: Chromium is bound directly to `$mod + Shift + c` for isolated testing and fallback browsing. Direct Brave launch is on `$mod + Shift + b`.
+* **PWA / Web App Suite (`webapp`)**: Powered by `brave-origin --app="..."`. Web apps (YouTube, YouTube Music, ChatGPT, Claude, Gemini, WhatsApp Web, Gmail, Reddit, GitHub, Calendar) share cookies, login sessions, and Shields ad-blocking with Brave, eliminating duplicate logins and ads while running in lightweight, standalone windows without browser chrome.
 
 ---
 

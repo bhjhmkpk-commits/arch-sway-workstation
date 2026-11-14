@@ -98,14 +98,14 @@ bindsym $mod+g exec $term --app-id=lazygit -e lazygit
 
 # Web Apps & AI Tools
 bindsym $mod+Shift+a exec ~/.local/bin/webapp gui
-bindsym $mod+Mod1+g exec chromium --app="https://gemini.google.com/" --name="webapp-gemini" --class="WebApp-gemini"
-bindsym $mod+Mod1+c exec chromium --app="https://chatgpt.com" --name="webapp-chatgpt" --class="WebApp-chatgpt"
-bindsym $mod+Mod1+k exec chromium --app="https://claude.ai" --name="webapp-claude-ai" --class="WebApp-claude-ai"
-bindsym $mod+Mod1+d exec chromium --app="https://claude.ai" --name="webapp-claude-ai" --class="WebApp-claude-ai"
-bindsym $mod+Mod1+w exec chromium --app="https://web.whatsapp.com" --name="webapp-whatsapp-web" --class="WebApp-whatsapp-web"
-bindsym $mod+Mod1+m exec chromium --app="https://mail.google.com" --name="webapp-gmail" --class="WebApp-gmail"
-bindsym $mod+Shift+y exec chromium --app="https://youtube.com" --name="webapp-youtube" --class="WebApp-youtube"
-bindsym $mod+Shift+m exec chromium --app="https://music.youtube.com" --name="webapp-youtube-music" --class="WebApp-youtube-music"
+bindsym $mod+Mod1+g exec brave-origin --app="https://gemini.google.com/" --name="webapp-gemini" --class="WebApp-gemini"
+bindsym $mod+Mod1+c exec brave-origin --app="https://chatgpt.com" --name="webapp-chatgpt" --class="WebApp-chatgpt"
+bindsym $mod+Mod1+k exec brave-origin --app="https://claude.ai" --name="webapp-claude-ai" --class="WebApp-claude-ai"
+bindsym $mod+Mod1+d exec brave-origin --app="https://claude.ai" --name="webapp-claude-ai" --class="WebApp-claude-ai"
+bindsym $mod+Mod1+w exec brave-origin --app="https://web.whatsapp.com" --name="webapp-whatsapp-web" --class="WebApp-whatsapp-web"
+bindsym $mod+Mod1+m exec brave-origin --app="https://mail.google.com" --name="webapp-gmail" --class="WebApp-gmail"
+bindsym $mod+Shift+y exec brave-origin --app="https://youtube.com" --name="webapp-youtube" --class="WebApp-youtube"
+bindsym $mod+Shift+m exec brave-origin --app="https://music.youtube.com" --name="webapp-youtube-music" --class="WebApp-youtube-music"
 bindsym $mod+y exec $term --app-id=yt-dlp-menu -e yt-dlp-menu
 
 # ── 3. Audio & Media Routing (playerctl & pamixer) ─────────────────────────────

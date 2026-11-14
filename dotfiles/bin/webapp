@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # 🌐 Arch Sway Workstation - Web App Maker & Manager
-# Creates clean, standalone, bar-less PWAs using Chromium --app mode
+# Creates clean, standalone, bar-less PWAs using Brave Browser / Chromium --app mode
 # ==============================================================================
 
 set -e
@@ -68,6 +68,7 @@ fetch_icon() {
     fi
 
     # Fallback: Copy standard internet web icon if available
+    cp /usr/share/icons/hicolor/256x256/apps/brave-origin.png "$dest" 2>/dev/null || \
     cp /usr/share/icons/hicolor/256x256/apps/chromium.png "$dest" 2>/dev/null || true
 }
 
@@ -102,13 +103,15 @@ create_webapp() {
         fetch_icon "$url" "$icon_path"
     fi
 
-    # Create Waybar PWA window icon alias
+    # Create Waybar PWA window icon alias (both Brave and Chromium prefixes)
     local domain
     domain=$(printf '%s' "$url" | sed -E 's|https?://([^/]+).*|\1|')
+    ln -sf "$icon_path" "$ICONS_DIR/brave-${domain}__-Default.png" 2>/dev/null || true
     ln -sf "$icon_path" "$ICONS_DIR/chrome-${domain}__-Default.png" 2>/dev/null || true
     if [[ "$ICONS_DIR" =~ 256x256 ]]; then
         local dir_512="${ICONS_DIR/256x256/512x512}"
         if [[ -d "$dir_512" ]]; then
+            ln -sf "$dir_512/webapp-$id.png" "$dir_512/brave-${domain}__-Default.png" 2>/dev/null || true
             ln -sf "$dir_512/webapp-$id.png" "$dir_512/chrome-${domain}__-Default.png" 2>/dev/null || true
         fi
     fi
@@ -122,12 +125,12 @@ Version=1.0
 Type=Application
 Name=$name
 Comment=$name Web Application
-Exec=chromium --app="$url" --name="webapp-$id" --class="WebApp-$id"
+Exec=brave-origin --app="$url" --name="webapp-$id" --class="WebApp-$id"
 Icon=webapp-$id
 Terminal=false
 StartupNotify=true
 Categories=Network;WebApplication;
-StartupWMClass=chrome-$id
+StartupWMClass=brave-$id
 EOF
 
     chmod +x "$desktop_path"

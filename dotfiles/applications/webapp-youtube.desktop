@@ -3,9 +3,9 @@ Version=1.0
 Type=Application
 Name=YouTube
 Comment=YouTube Web Application
-Exec=chromium --app="https://youtube.com" --name="webapp-youtube" --class="WebApp-youtube"
+Exec=brave-origin --app="https://youtube.com" --name="webapp-youtube" --class="WebApp-youtube"
 Icon=webapp-youtube
 Terminal=false
 StartupNotify=true
 Categories=Network;WebApplication;
-StartupWMClass=chrome-youtube
+StartupWMClass=brave-youtube
