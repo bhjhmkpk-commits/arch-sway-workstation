@@ -21,13 +21,14 @@
 | **Clipboard**| **Push to Phone Bridge** | **`$mod + Ctrl + c`** | Send clipboard text or photo to phone bridge |
 | **Clipboard**| Clipboard History (Cliphist) | **`$mod + Shift + v`** | Search, paste, or wipe clipboard |
 | **Monitor** | System & Task Monitor (Btop) | **`$mod + Escape`** | CPU, GPU, RAM, Disks, Networks |
-| **Browser** | Chromium Browser | **`$mod + b`** | Default Web Browser |
-| **Browser** | Brave Origin Nightly | **`$mod + Shift + b`** | Secondary Ad-blocking Browser |
+| **Browser** | **Default Web Browser** (Brave) | **`$mod + b`** | Default Web Browser (Brave with Shields & Sync) |
+| **Browser** | **Brave Browser** (Direct) | **`$mod + Shift + b`** | Privacy browser with native Shields ad-blocking |
+| **Browser** | **Chromium Browser** (Direct) | **`$mod + Shift + c`** | Clean native Wayland web browser |
 | **Files**   | Graphical File Manager (Thunar)| **`$mod + Shift + f`** | Thunar GUI with MTP phone browsing |
 | **Files**   | Terminal File Manager (Yazi) | **`$mod + Alt + f`** | Fast terminal file manager with image previews |
 | **PDF**     | Annotate & Sign (Xournal++) | **`$mod + p`** | Lecture notes, PDF highlighting, signing |
 | **PDF**     | Split, Merge & Crop (PDF Arranger)| **`$mod + Shift + p`** | Drag & drop PDF page manipulator |
-| **Math**    | Scientific Calculator (Galculator)| **`$mod + =`** / **`$mod + Shift + c`** | GTK scientific desktop calculator |
+| **Math**    | Scientific Calculator (Galculator)| **`$mod + =`** | GTK scientific desktop calculator |
 | **Math**    | Physics, Calculus & Currency | `calc "<expr>"` | E.g. `calc "50 USD in INR"`, `calc "2.5 eV in J"` |
 | **Image**   | Image Editor & Cropper (Pinta)| **`$mod + i`** | Paint.NET alternative: crop, retouch, layers |
 | **Notes**   | Quick GUI Text Notes (Mousepad)| **`$mod + m`** | Fast tabbed text editor with syntax highlighting |

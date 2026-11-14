@@ -61,7 +61,9 @@ ${Y}🖥️ 5. SWAY DESKTOP SHORTCUTS${RESET}
   ${C}\$mod + Shift + v${RESET}         Clipboard history menu (${DIM}cliphist${RESET})
   ${C}\$mod + /${RESET} / ${C}\$mod + ?${RESET}         Complete searchable keybinding finder (${DIM}keysheet${RESET})
   ${C}\$mod + Escape${RESET}            Task & resource monitor (${DIM}btop${RESET})
-  ${C}\$mod + b${RESET}                 Chromium browser
+  ${C}\$mod + b${RESET}                 Default browser (${DIM}Brave${RESET})
+  ${C}\$mod + Shift + b${RESET}         Brave browser (${DIM}Shields & Sync${RESET})
+  ${C}\$mod + Shift + c${RESET}         Chromium browser
   ${C}\$mod + w${RESET}                 Close focused window
   ${C}\$mod + Shift + r${RESET}         Reload Sway compositor configuration
   ${C}\$mod + Shift + e${RESET}         Power menu (Power Off / Reboot / Logout)

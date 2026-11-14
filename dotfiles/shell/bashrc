@@ -6,7 +6,7 @@
 # Default Environment
 export EDITOR="nvim"
 export VISUAL="nvim"
-export BROWSER="chromium"
+export BROWSER="brave-origin"
 export TERMINAL="foot"
 
 # Clean single-entry PATH

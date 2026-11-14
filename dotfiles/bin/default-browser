@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🌐 Arch Sway Workstation - Default Web Browser Launcher
+# Resolves and launches the system-configured default web browser ($BROWSER / xdg)
+# ==============================================================================
+
+# 1. If BROWSER is set and points to an available executable, launch it
+if [ -n "$BROWSER" ] && command -v "$BROWSER" >/dev/null 2>&1; then
+    exec "$BROWSER" "$@"
+fi
+
+# 2. Check xdg-settings default desktop entry
+DEFAULT_DESKTOP=$(xdg-settings get default-web-browser 2>/dev/null || true)
+if [ -n "$DEFAULT_DESKTOP" ] && command -v gtk-launch >/dev/null 2>&1; then
+    exec gtk-launch "$DEFAULT_DESKTOP" "$@"
+fi
+
+# 3. Dedicated fallbacks
+if [ -x "$HOME/.local/bin/brave-origin" ]; then
+    exec "$HOME/.local/bin/brave-origin" "$@"
+elif command -v brave-origin >/dev/null 2>&1; then
+    exec brave-origin "$@"
+elif command -v chromium >/dev/null 2>&1; then
+    exec chromium "$@"
+fi
+
+exec xdg-open "${1:-about:blank}"

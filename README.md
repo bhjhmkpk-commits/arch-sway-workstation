@@ -86,7 +86,9 @@ The script will:
 | <kbd>Super</kbd> + <kbd>W</kbd> | **Close Window** | Closes the active window |
 | <kbd>Super</kbd> + <kbd>F</kbd> | **Fullscreen Toggle** | Toggles full-screen mode |
 | <kbd>Super</kbd> + <kbd>T</kbd> | **Floating Toggle** | Toggles floating mode on active window |
-| <kbd>Super</kbd> + <kbd>B</kbd> | **Chromium Browser** | Clean web browser & PWA runner |
+| <kbd>Super</kbd> + <kbd>B</kbd> | **Default Web Browser** | Launches default browser (Brave) |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> | **Brave Browser** | Privacy browser with native Shields & Sync |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | **Chromium Browser** | Clean native Wayland web browser |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | **Thunar File Manager** | Lightweight GUI file manager |
 | <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd> | **Yazi Terminal FM** | Blazing-fast terminal file manager |
 | <kbd>Print</kbd> | **Screenshot Full Screen** | Auto-copies to clipboard & opens Satty editor |

@@ -65,8 +65,9 @@ bindsym $mod+Shift+e exec swaynag -t warning -m "Power Menu" -B "Power Off" "sys
 
 # ── 2. Applications & Workstation Utilities ────────────────────────────────────
 # Web Browsers
-bindsym $mod+b exec chromium
+bindsym $mod+b exec ~/.local/bin/default-browser
 bindsym $mod+Shift+b exec ~/.local/bin/brave-origin
+bindsym $mod+Shift+c exec chromium
 
 # File Managers
 bindsym $mod+Shift+f exec thunar
@@ -76,7 +77,6 @@ bindsym $mod+Mod1+f exec $term --app-id=yazi -e yazi
 bindsym $mod+p exec xournalpp
 bindsym $mod+Shift+p exec pdfarranger
 bindsym $mod+equal exec galculator
-bindsym $mod+Shift+c exec galculator
 bindsym $mod+i exec pinta
 bindsym $mod+m exec mousepad
 
