@@ -184,6 +184,23 @@ EOF
 sudo systemctl enable greetd.service
 echo -e "${GREEN}✓ Minimal tuigreet login manager configured and enabled!${NC}"
 
+# Enable NumLock on virtual consoles / TTYs by default
+sudo tee /etc/systemd/system/numlock.service > /dev/null <<'EOF'
+[Unit]
+Description=Enable NumLock on virtual consoles
+After=systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'for tty in /dev/tty[1-6]; do [ -e "$tty" ] && /usr/bin/setleds -D +num < "$tty"; done'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable numlock.service >/dev/null 2>&1 || true
+
 # 12. Host Security: Firewall (UFW)
 echo -e "\n${BLUE}🛡️ Configuring host firewall (UFW)...${NC}"
 sudo ufw default deny incoming >/dev/null 2>&1 || true

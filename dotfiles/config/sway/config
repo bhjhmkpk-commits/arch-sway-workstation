@@ -22,6 +22,10 @@ input type:touchpad {
     middle_emulation enabled
 }
 
+input type:keyboard {
+    xkb_numlock enabled
+}
+
 # Laptop Lid Switch (Auto-lock screen on lid close)
 bindswitch --reload --locked lid:on exec swaylock -f
 
