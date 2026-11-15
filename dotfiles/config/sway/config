@@ -139,8 +139,8 @@ bindsym Mod1+Print exec ~/.local/bin/ocr-grab
 bindsym $mod+Print exec ~/.local/bin/ocr-grab
 
 # ── 6. Special Windows, Scratchpad & Pin (Omarchy Parity) ──────────────────────
-bindsym $mod+o exec ~/.local/bin/scratchpad-term
-bindsym $mod+Shift+o move scratchpad
+bindsym $mod+s exec ~/.local/bin/scratchpad-term
+bindsym $mod+Shift+s move scratchpad
 bindsym $mod+grave scratchpad show
 bindsym $mod+h exec ~/.local/bin/sway-pin
 
@@ -165,9 +165,9 @@ bindsym $mod+Shift+Right move right
 bindsym $mod+backslash splith
 bindsym $mod+minus splitv
 bindsym $mod+e layout toggle split
-bindsym $mod+s layout stacking
+bindsym $mod+o layout stacking
 bindsym $mod+Shift+w layout tabbed
-bindsym $mod+Shift+s layout toggle all
+bindsym $mod+Shift+o layout toggle all
 bindsym $mod+Ctrl+space move position center
 bindsym $mod+Mod1+Up focus parent
 bindsym $mod+Mod1+Down focus child

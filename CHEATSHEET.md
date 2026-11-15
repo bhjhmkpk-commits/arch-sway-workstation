@@ -51,8 +51,8 @@
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
 | **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Print`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
-| **Special** | **Dropdown Scratchpad Terminal** | **`$mod + o`** | Instant summon/hide floating terminal (Omarchy special window) |
-| **Special** | **Move Window to Scratchpad** | **`$mod + Shift + o`** | Stash active window into hidden scratchpad memory |
+| **Special** | **Dropdown Scratchpad Terminal** | **`$mod + s`** | Instant summon/hide floating terminal (Omarchy special window) |
+| **Special** | **Move Window to Scratchpad** | **`$mod + Shift + s`** | Stash active window into hidden scratchpad memory |
 | **Special** | **Cycle Stashed Windows** | **`$mod + ` `** (grave) | Cycle all hidden scratchpad windows on screen |
 | **Special** | **Pop-Out & Pin Window (Sticky)** | **`$mod + h`** | Float & pin window across all workspaces (Omarchy Pop-Out) |
 | **Display** | Toggle Night Light | **`$mod + n`** | Eye-care blue light reduction filter |
@@ -75,8 +75,8 @@
 | **Window**  | Keyboard Resizing Mode | **`$mod + r`** | Fine-tune window size with arrows or HJKL |
 | **Layout**  | Vertical / Horizontal Split | **`$mod + -`** / **`$mod + \`** | Set container split orientation |
 | **Layout**  | Toggle Split Orientation | **`$mod + e`** | Switch split direction between horizontal & vertical |
-| **Layout**  | Stacking / Tabbed Layout | **`$mod + s`** / **`$mod + Shift + w`** | Tabbed or stacked container views |
-| **Layout**  | Cycle All Layout Styles | **`$mod + Shift + s`** | Cycle: Split → Stacking → Tabbed |
+| **Layout**  | Stacking / Tabbed Layout | **`$mod + o`** / **`$mod + Shift + w`** | Tabbed or stacked container views |
+| **Layout**  | Cycle All Layout Styles | **`$mod + Shift + o`** | Cycle: Split → Stacking → Tabbed |
 | **Workspaces**| Switch Workspace 1–10 | **`$mod + 1 .. 0`** | Instant workspace switching |
 | **Workspaces**| Move Container to Workspace | **`$mod + Shift + 1 .. 0`** | Move window to target workspace |
 

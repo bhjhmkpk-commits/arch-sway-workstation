@@ -152,10 +152,10 @@
 * **PWA / Web App Suite (`webapp`)**: Powered by `brave-origin --app="..."`. Web apps (YouTube, YouTube Music, ChatGPT, Claude, Gemini, WhatsApp Web, Gmail, Reddit, GitHub, Calendar) share cookies, login sessions, and Shields ad-blocking with Brave, eliminating duplicate logins and ads while running in lightweight, standalone windows without browser chrome.
 
 ### 8. Omarchy-Inspired Special Windows, Pop-Out Pinning & Complete Sway Layouts
-* **Instant Dropdown Scratchpad Terminal (`$mod + o`)**: Toggles a dedicated, floating dropdown terminal (`scratchpad-term`) front and center without killing the process or resetting the shell environment.
-* **Universal Scratchpad Stash (`$mod + Shift + o`) & Recall (`$mod + ` `)**: Push any active window out of view into Sway's hidden memory, and recall/cycle stashed windows anytime.
+* **Instant Dropdown Scratchpad Terminal (`$mod + s`)**: Toggles a dedicated, floating dropdown terminal (`scratchpad-term`) front and center without killing the process or resetting the shell environment.
+* **Universal Scratchpad Stash (`$mod + Shift + s`) & Recall (`$mod + ` `)**: Push any active window out of view into Sway's hidden memory, and recall/cycle stashed windows anytime.
 * **Omarchy Pop-out Pinning (`$mod + h`)**: `sway-pin` script floats and pins the active window across all workspaces (picture-in-picture, video, notes, phone mirror); pressing again unpins and re-tiles.
-* **Complete Sway Layout Suite**: Horizontal split (`$mod + \`), Vertical split (`$mod + -`), Split orientation toggle (`$mod + e`), Stacking layout (`$mod + s`), Tabbed layout (`$mod + Shift + w`), Layout style cycler (`$mod + Shift + s`), Keyboard precision resize mode (`$mod + r`), Center floating window (`$mod + Ctrl + Space`), and Parent/Child navigation (`$mod + Alt + Up/Down`).
+* **Complete Sway Layout Suite**: Horizontal split (`$mod + \`), Vertical split (`$mod + -`), Split orientation toggle (`$mod + e`), Stacking layout (`$mod + o`), Tabbed layout (`$mod + Shift + w`), Layout style cycler (`$mod + Shift + o`), Keyboard precision resize mode (`$mod + r`), Center floating window (`$mod + Ctrl + Space`), and Parent/Child navigation (`$mod + Alt + Up/Down`).
 
 ---
 
