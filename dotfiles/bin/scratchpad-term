@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🚀 Instant Scratchpad / Dropdown Terminal (Special Window)
+# Toggles a dedicated floating dropdown terminal that appears instantly
+# anywhere without restarting the process.
+# ==============================================================================
+
+set -euo pipefail
+
+SWAYSOCK="${SWAYSOCK:-$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -n 1)}"
+export SWAYSOCK
+
+# Check if scratchpad-term exists in Sway tree
+if swaymsg -t get_tree | jq -e '.. | select(.app_id? == "scratchpad-term")' >/dev/null 2>&1; then
+    # Check if scratchpad terminal is currently focused
+    focused=$(swaymsg -t get_tree | jq -r '.. | select(.app_id? == "scratchpad-term") | .focused')
+    if [ "$focused" = "true" ]; then
+        # If currently active, tuck it away into scratchpad
+        swaymsg '[app_id="scratchpad-term"] move scratchpad' >/dev/null 2>&1 || true
+    else
+        # If hidden or unfocused, summon it front and center
+        swaymsg '[app_id="scratchpad-term"] scratchpad show' >/dev/null 2>&1 || true
+        swaymsg '[app_id="scratchpad-term"] focus' >/dev/null 2>&1 || true
+    fi
+else
+    # Launch new scratchpad terminal (Sway window rule positions and formats it)
+    foot --app-id=scratchpad-term &
+fi

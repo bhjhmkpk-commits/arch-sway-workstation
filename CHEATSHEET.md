@@ -50,7 +50,11 @@
 | **Web Apps**| YouTube / Music | **`$mod + Shift + y`** / **`m`** | Standalone YouTube & Music players |
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
-| **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Shift + o`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
+| **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Print`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
+| **Special** | **Dropdown Scratchpad Terminal** | **`$mod + o`** | Instant summon/hide floating terminal (Omarchy special window) |
+| **Special** | **Move Window to Scratchpad** | **`$mod + Shift + o`** | Stash active window into hidden scratchpad memory |
+| **Special** | **Cycle Stashed Windows** | **`$mod + ` `** (grave) | Cycle all hidden scratchpad windows on screen |
+| **Special** | **Pop-Out & Pin Window (Sticky)** | **`$mod + h`** | Float & pin window across all workspaces (Omarchy Pop-Out) |
 | **Display** | Toggle Night Light | **`$mod + n`** | Eye-care blue light reduction filter |
 | **Display** | Cycle Night Light Temperature | **`$mod + Shift + n`** | 4500K -> 3500K -> 2700K -> Off |
 | **Display** | Monitor Brightness Up / Down | **`XF86MonBrightnessUp / Down`** | Hardware DDC/CI monitor brightness |
@@ -64,10 +68,15 @@
 | **Window**  | Close / Kill Window | **`$mod + w`** | Terminate active application |
 | **Window**  | Toggle Fullscreen | **`$mod + f`** | Dedicated fullscreen container |
 | **Window**  | Toggle Floating / Tiling | **`$mod + t`** | Float individual window |
-| **Window**  | Window Focus Navigation | **`$mod + Arrows`** or **`$mod + h, j, l, Up`** | Focus window direction |
+| **Window**  | Window Focus Navigation | **`$mod + Arrows`** or **`$mod + j, l`** | Focus window direction |
 | **Window**  | Window Move Navigation | **`$mod + Shift + Arrows`** or **`h, j, k, l`** | Move container direction |
+| **Window**  | Center Floating Window | **`$mod + Ctrl + Space`** | Center any floating window on screen |
+| **Window**  | Focus Parent / Child | **`$mod + Alt + Up`** / **`Down`** | Traverse container layout hierarchy |
+| **Window**  | Keyboard Resizing Mode | **`$mod + r`** | Fine-tune window size with arrows or HJKL |
 | **Layout**  | Vertical / Horizontal Split | **`$mod + -`** / **`$mod + \`** | Set container split orientation |
+| **Layout**  | Toggle Split Orientation | **`$mod + e`** | Switch split direction between horizontal & vertical |
 | **Layout**  | Stacking / Tabbed Layout | **`$mod + s`** / **`$mod + Shift + w`** | Tabbed or stacked container views |
+| **Layout**  | Cycle All Layout Styles | **`$mod + Shift + s`** | Cycle: Split → Stacking → Tabbed |
 | **Workspaces**| Switch Workspace 1–10 | **`$mod + 1 .. 0`** | Instant workspace switching |
 | **Workspaces**| Move Container to Workspace | **`$mod + Shift + 1 .. 0`** | Move window to target workspace |
 

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 📌 Sway Window Pin & Pop-Out (Omarchy-style)
+# Toggles floating + sticky mode so the active window floats and follows
+# across all workspaces (ideal for video players, Scrcpy, notes, or reference docs).
+# ==============================================================================
+
+set -euo pipefail
+
+SWAYSOCK="${SWAYSOCK:-$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -n 1)}"
+
+# Query currently focused window in Sway tree
+window_info=$(swaymsg -s "$SWAYSOCK" -t get_tree | jq '.. | select(.focused? == true)')
+
+if [ -z "$window_info" ] || [ "$window_info" = "null" ]; then
+    exit 0
+fi
+
+is_sticky=$(echo "$window_info" | jq -r '.sticky')
+
+if [ "$is_sticky" = "true" ]; then
+    # Unpin: disable sticky and return to tiling
+    swaymsg -s "$SWAYSOCK" "sticky disable, floating disable"
+    notify-send -t 1500 -u low -i window-new "Window Unpinned" "Returned to tiled layout." 2>/dev/null || true
+else
+    # Pin: pop out to floating and make sticky across all workspaces
+    swaymsg -s "$SWAYSOCK" "floating enable, sticky enable"
+    notify-send -t 1500 -u low -i window-pin "Window Pinned (Pop-Out)" "Floating and visible across all workspaces." 2>/dev/null || true
+fi
