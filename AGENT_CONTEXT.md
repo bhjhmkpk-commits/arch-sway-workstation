@@ -151,9 +151,9 @@
 * **Secondary Clean Browser**: Chromium is bound directly to `$mod + Shift + c` for isolated testing and fallback browsing. Direct Brave launch is on `$mod + Shift + b`.
 * **PWA / Web App Suite (`webapp`)**: Powered by `brave-origin --app="..."`. Web apps (YouTube, YouTube Music, ChatGPT, Claude, Gemini, WhatsApp Web, Gmail, Reddit, GitHub, Calendar) share cookies, login sessions, and Shields ad-blocking with Brave, eliminating duplicate logins and ads while running in lightweight, standalone windows without browser chrome.
 
-### 8. Omarchy-Inspired Special Workspace, Pop-Out Pinning & Complete Sway Layouts
-* **Special Scratchpad Workspace (`$mod + s`)**: Toggles a dedicated multi-window workspace (`sway-special`) supporting terminals, web apps (ChatGPT, Claude, Gemini, WhatsApp), browsers, and utilities side-by-side. Can be summoned from and returned to ANY active workspace. Auto-spawns an initial terminal if empty.
-* **Stash / Eject Window (`$mod + Shift + s`)**: Moves active window into Special Scratchpad space from regular workspaces; when used inside Special, ejects the window back to the previous workspace. Traditional floating scratchpad cycling remains on `$mod + ` `.
+### 8. Omarchy-Inspired Special Scratchpad Deck, Pop-Out Pinning & Complete Sway Layouts
+* **Floating Scratchpad Deck (`$mod + s`)**: Toggles a floating overlay window (`sway-special`) popping out directly on top of the active workspace without cluttering Waybar workspace numbers. Supports terminals, web apps (ChatGPT, Claude, Gemini, WhatsApp), browsers, and utilities. Auto-spawns an initial spacious terminal if empty.
+* **Stash / Eject Window (`$mod + Shift + s`)**: Formats and moves the active window into the scratchpad deck (or ejects it back to tiling layout). Direct app picker is available via `$mod + Alt + s`, and sequential cycling via `$mod + ` `.
 * **Omarchy Pop-out Pinning (`$mod + h`)**: `sway-pin` script floats and pins the active window across all workspaces (picture-in-picture, video, notes, phone mirror); pressing again unpins and re-tiles.
 * **Complete Sway Layout Suite**: Horizontal split (`$mod + \`), Vertical split (`$mod + -`), Split orientation toggle (`$mod + e`), Stacking layout (`$mod + o`), Tabbed layout (`$mod + Shift + w`), Layout style cycler (`$mod + Shift + o`), Keyboard precision resize mode (`$mod + r`), Center floating window (`$mod + Ctrl + Space`), and Parent/Child navigation (`$mod + Alt + Up/Down`).
 

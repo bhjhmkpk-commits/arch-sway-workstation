@@ -138,10 +138,11 @@ bindsym Shift+Print exec ~/.local/bin/screenshot area
 bindsym Mod1+Print exec ~/.local/bin/ocr-grab
 bindsym $mod+Print exec ~/.local/bin/ocr-grab
 
-# ── 6. Special Workspace, Scratchpad & Pin (Omarchy Parity) ───────────────────
+# ── 6. Special Scratchpad Deck & Pin (Omarchy Parity) ───────────────────────────
 bindsym $mod+s exec ~/.local/bin/sway-special toggle
 bindsym $mod+Shift+s exec ~/.local/bin/sway-special move
-bindsym $mod+grave scratchpad show
+bindsym $mod+Mod1+s exec ~/.local/bin/sway-special menu
+bindsym $mod+grave exec ~/.local/bin/sway-special cycle
 bindsym $mod+Shift+grave move scratchpad
 bindsym $mod+h exec ~/.local/bin/sway-pin
 
@@ -236,4 +237,4 @@ for_window [app_id="zenity"] floating enable
 for_window [class="Ventoy2Disk.gtk3"] floating enable
 for_window [app_id="yt-dlp-menu"] floating enable, resize set 880 620
 for_window [app_id="yazi-floating"] floating enable, resize set 1100 700
-for_window [app_id="scratchpad-term"] floating enable, resize set 1100 650, move position center
+for_window [app_id="scratchpad-term"] floating enable, resize set 1350 850, move position center

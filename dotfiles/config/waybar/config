@@ -23,7 +23,8 @@
     "sway/workspaces": {
         "disable-scroll": true,
         "all-outputs": true,
-        "format": "{name}"
+        "format": "{name}",
+        "ignore-workspaces": ["^[Ss]pecial$"]
     },
     "sway/window": {
         "format": "{app_id} : {title}",

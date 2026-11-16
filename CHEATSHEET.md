@@ -51,9 +51,10 @@
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
 | **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Print`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
-| **Special** | **Toggle Special Workspace (Scratchpad)** | **`$mod + s`** | Instant summon/return overlay space for terminals, web apps, and tools |
-| **Special** | **Stash / Eject Window (Special Space)** | **`$mod + Shift + s`** | Move active window into Special Scratchpad space (or back out) |
-| **Special** | **Floating Scratchpad Cycle** | **`$mod + ` `** (grave) | Cycle traditional floating scratchpad windows |
+| **Special** | **Toggle Scratchpad Deck (Pop-Out)** | **`$mod + s`** | Pop out / hide floating scratchpad window over ANY workspace (Omarchy style) |
+| **Special** | **Stash / Eject Window (Scratchpad)** | **`$mod + Shift + s`** | Move active window into background scratchpad (or unfloat back to tiling) |
+| **Special** | **Choose App from Scratchpad Deck** | **`$mod + Alt + s`** | Wofi picker to jump directly to any stashed scratchpad app |
+| **Special** | **Cycle Scratchpad Apps** | **`$mod + ` `** (grave) | Cycle all stashed apps (terminals, web apps, tools) in the deck |
 | **Special** | **Pop-Out & Pin Window (Sticky)** | **`$mod + h`** | Float & pin window across all workspaces (Omarchy Pop-Out) |
 | **Display** | Toggle Night Light | **`$mod + n`** | Eye-care blue light reduction filter |
 | **Display** | Cycle Night Light Temperature | **`$mod + Shift + n`** | 4500K -> 3500K -> 2700K -> Off |
