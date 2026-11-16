@@ -39,7 +39,7 @@
 @define-color sidebar_fg_color #e6e2d8;
 
 /* Application Surfaces */
-window, .background {
+window {
     background-color: #1e2a24;
     color: #e6e2d8;
 }

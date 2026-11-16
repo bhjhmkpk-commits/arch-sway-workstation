@@ -3,20 +3,18 @@
     font-size: 17px;
 }
 
-window {
-    margin: 0px;
-    border: none;
-    background-color: transparent;
-}
-
+window,
+window.background,
+.background,
 #window {
     margin: 0px;
     border: none;
-    background-color: transparent;
+    background-color: transparent !important;
+    background: transparent !important;
 }
 
 #outer-box {
-    margin: 4px;
+    margin: 0px;
     padding: 22px;
     background-color: #1e2a24;
     border: 2px solid #a7c080;
