@@ -138,10 +138,11 @@ bindsym Shift+Print exec ~/.local/bin/screenshot area
 bindsym Mod1+Print exec ~/.local/bin/ocr-grab
 bindsym $mod+Print exec ~/.local/bin/ocr-grab
 
-# ── 6. Special Windows, Scratchpad & Pin (Omarchy Parity) ──────────────────────
-bindsym $mod+s exec ~/.local/bin/scratchpad-term
-bindsym $mod+Shift+s move scratchpad
+# ── 6. Special Workspace, Scratchpad & Pin (Omarchy Parity) ───────────────────
+bindsym $mod+s exec ~/.local/bin/sway-special toggle
+bindsym $mod+Shift+s exec ~/.local/bin/sway-special move
 bindsym $mod+grave scratchpad show
+bindsym $mod+Shift+grave move scratchpad
 bindsym $mod+h exec ~/.local/bin/sway-pin
 
 # ── 7. Window Navigation (Vim & Arrows) ────────────────────────────────────────

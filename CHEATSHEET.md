@@ -51,9 +51,9 @@
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
 | **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Print`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
-| **Special** | **Dropdown Scratchpad Terminal** | **`$mod + s`** | Instant summon/hide floating terminal (Omarchy special window) |
-| **Special** | **Move Window to Scratchpad** | **`$mod + Shift + s`** | Stash active window into hidden scratchpad memory |
-| **Special** | **Cycle Stashed Windows** | **`$mod + ` `** (grave) | Cycle all hidden scratchpad windows on screen |
+| **Special** | **Toggle Special Workspace (Scratchpad)** | **`$mod + s`** | Instant summon/return overlay space for terminals, web apps, and tools |
+| **Special** | **Stash / Eject Window (Special Space)** | **`$mod + Shift + s`** | Move active window into Special Scratchpad space (or back out) |
+| **Special** | **Floating Scratchpad Cycle** | **`$mod + ` `** (grave) | Cycle traditional floating scratchpad windows |
 | **Special** | **Pop-Out & Pin Window (Sticky)** | **`$mod + h`** | Float & pin window across all workspaces (Omarchy Pop-Out) |
 | **Display** | Toggle Night Light | **`$mod + n`** | Eye-care blue light reduction filter |
 | **Display** | Cycle Night Light Temperature | **`$mod + Shift + n`** | 4500K -> 3500K -> 2700K -> Off |

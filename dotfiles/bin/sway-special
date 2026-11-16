@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ⚡ Special Scratchpad Workspace Suite (Omarchy-style)
+# Toggles an entire dedicated multi-app scratchpad workspace ($mod + s)
+# and allows stashing/ejecting any window into it ($mod + Shift + s).
+# Supports terminals, web apps, browsers, and utilities side-by-side.
+# ==============================================================================
+
+set -euo pipefail
+
+SWAYSOCK="${SWAYSOCK:-$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -n 1)}"
+export SWAYSOCK
+
+STATE_FILE="/tmp/sway-special-prev-${UID}"
+WS_NAME="Special"
+
+action="${1:-toggle}"
+
+current_ws=$(swaymsg -t get_workspaces | jq -r '.[] | select(.focused == true) | .name')
+
+case "$action" in
+    toggle)
+        if [ "$current_ws" = "$WS_NAME" ]; then
+            # Inside Special: return to the previous workspace
+            prev_ws="1"
+            if [ -f "$STATE_FILE" ]; then
+                prev_ws=$(cat "$STATE_FILE")
+            fi
+            if [ -z "$prev_ws" ] || [ "$prev_ws" = "$WS_NAME" ]; then
+                swaymsg "workspace back_and_forth" >/dev/null 2>&1 || swaymsg "workspace number 1" >/dev/null 2>&1
+            else
+                swaymsg "workspace \"$prev_ws\"" >/dev/null 2>&1
+            fi
+        else
+            # Save current workspace before switching
+            echo "$current_ws" > "$STATE_FILE"
+
+            # Switch to Special workspace
+            swaymsg "workspace \"$WS_NAME\"" >/dev/null 2>&1
+
+            # Check if Special workspace is empty; if so, spawn an initial terminal
+            special_wins=$(swaymsg -t get_tree | jq "[.. | select(.type? == \"workspace\" and .name? == \"$WS_NAME\") | (.nodes[]?, .floating_nodes[]?)] | length")
+            if [ "$special_wins" -eq 0 ]; then
+                foot &
+            fi
+        fi
+        ;;
+
+    move)
+        if [ "$current_ws" = "$WS_NAME" ]; then
+            # Inside Special: eject window back to previous workspace
+            prev_ws="1"
+            if [ -f "$STATE_FILE" ]; then
+                prev_ws=$(cat "$STATE_FILE")
+            fi
+            if [ -n "$prev_ws" ] && [ "$prev_ws" != "$WS_NAME" ]; then
+                swaymsg "move container to workspace \"$prev_ws\"" >/dev/null 2>&1
+                notify-send -t 1200 -u low -i window-new "Ejected from Special" "Moved to Workspace $prev_ws" 2>/dev/null || true
+            fi
+        else
+            # Outside Special: stash window into Special workspace
+            swaymsg "move container to workspace \"$WS_NAME\"" >/dev/null 2>&1
+            notify-send -t 1200 -u low -i window-pin "Moved to Special" "Window is now in Special Scratchpad space" 2>/dev/null || true
+        fi
+        ;;
+esac
