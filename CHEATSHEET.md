@@ -51,10 +51,10 @@
 | **Screen**  | Full Screenshot (Satty) | **`Print`** | Captured to `~/Pictures/Screenshots` |
 | **Screen**  | Area Crop Screenshot (Satty) | **`Shift + Print`** | Select area and annotate directly |
 | **Screen**  | Instant Screen OCR (Tesseract)| **`$mod + Print`** or **`Alt + Print`** | Select any area → extracted text to clipboard |
-| **Special** | **Toggle Scratchpad Deck (Pop-Out)** | **`$mod + s`** | Pop out / hide floating scratchpad window over ANY workspace (Omarchy style) |
-| **Special** | **Stash / Eject Window (Scratchpad)** | **`$mod + Shift + s`** | Move active window into background scratchpad (or unfloat back to tiling) |
-| **Special** | **Choose App from Scratchpad Deck** | **`$mod + Alt + s`** | Wofi picker to jump directly to any stashed scratchpad app |
-| **Special** | **Cycle Scratchpad Apps** | **`$mod + ` `** (grave) | Cycle all stashed apps (terminals, web apps, tools) in the deck |
+| **Special** | **Toggle Special Workspace (Omarchy)** | **`$mod + s`** | Instant dedicated workspace hidden from Waybar. Full tiling, $mod+Enter terminal, Wofi apps, and toggles back to previous workspace |
+| **Special** | **Send / Eject Window (Special WS)** | **`$mod + Shift + s`** | Move active window into Special Workspace (or eject back to previous workspace) |
+| **Special** | **Special Workspace Window Picker** | **`$mod + Alt + s`** | Wofi menu to focus any window currently on the Special Workspace |
+| **Special** | **Toggle / Cycle Special Workspace** | **`$mod + ` `** (grave) | Quick toggle between Special Workspace and previous workspace |
 | **Special** | **Pop-Out & Pin Window (Sticky)** | **`$mod + h`** | Float & pin window across all workspaces (Omarchy Pop-Out) |
 | **Display** | Toggle Night Light | **`$mod + n`** | Eye-care blue light reduction filter |
 | **Display** | Cycle Night Light Temperature | **`$mod + Shift + n`** | 4500K -> 3500K -> 2700K -> Off |

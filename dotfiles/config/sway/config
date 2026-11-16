@@ -238,4 +238,3 @@ for_window [app_id="zenity"] floating enable
 for_window [class="Ventoy2Disk.gtk3"] floating enable
 for_window [app_id="yt-dlp-menu"] floating enable, resize set 880 620
 for_window [app_id="yazi-floating"] floating enable, resize set 1100 700
-for_window [app_id="scratchpad-term"] floating enable, resize set 1350 850, move position center

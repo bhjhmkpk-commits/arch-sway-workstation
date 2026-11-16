@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# ⚡ Special Scratchpad Deck Suite (Omarchy-style Floating Overlay)
-# Allows terminals, web apps (ChatGPT, Claude, Gemini, YouTube, WhatsApp),
-# and tools to pop out over ANY workspace with $mod + s.
-# Windows stay hidden from Waybar workspace numbers and float on top.
+# ⚡ Special Workspace Suite (Omarchy Parity)
+# Dedicated full-featured workspace ("special") hidden from Waybar's
+# workspace numbers module. Full tiling, normal shortcuts ($mod+Return, Wofi),
+# and seamless toggle back to previous workspace with $mod + s.
 # ==============================================================================
 
 set -euo pipefail
@@ -11,73 +11,84 @@ set -euo pipefail
 SWAYSOCK="${SWAYSOCK:-$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -n 1)}"
 export SWAYSOCK
 
+STATE_FILE="/tmp/sway-special-prev-${UID}"
 action="${1:-toggle}"
 
-get_scratchpad_count() {
-    swaymsg -t get_tree | jq '[.. | select(.name? == "__i3_scratch") | .. | select(.type? == "floating_con" or .type? == "con") | select(.name? != null and .name? != "__i3_scratch")] | length'
+get_focused_workspace() {
+    swaymsg -t get_workspaces 2>/dev/null | jq -r '.[] | select(.focused==true) | .name' || echo "1"
 }
 
-is_focused_floating() {
-    swaymsg -t get_tree | jq -r '
-        [.. | select(.focused? == true)] | .[0] |
-        if . == null then "false"
-        elif .type == "floating_con" or (.floating? != null and .floating != "auto_off" and .floating != "user_off") then "true"
-        else "false"
-        end
-    '
+is_special_active() {
+    swaymsg -t get_workspaces 2>/dev/null | jq -e '.[] | select(.name=="special")' >/dev/null 2>&1
+}
+
+get_prev_workspace() {
+    if [ -f "$STATE_FILE" ]; then
+        prev=$(cat "$STATE_FILE" 2>/dev/null || true)
+        if [ -n "$prev" ] && [ "$prev" != "special" ]; then
+            echo "$prev"
+            return
+        fi
+    fi
+    echo "1"
 }
 
 case "$action" in
-    toggle)
-        # If currently focused on a floating / scratchpad window, hide it
-        if [ "$(is_focused_floating)" = "true" ]; then
-            swaymsg move scratchpad >/dev/null 2>&1 || true
+    toggle|cycle)
+        current_ws=$(get_focused_workspace)
+
+        if [ "$current_ws" = "special" ]; then
+            # Currently on Special Workspace -> Return to the normal previous workspace
+            target_ws=$(get_prev_workspace)
+            swaymsg workspace "$target_ws" >/dev/null 2>&1 || true
         else
-            count=$(get_scratchpad_count)
-            if [ "$count" -gt 0 ]; then
-                # Summon scratchpad window over the active workspace
-                swaymsg scratchpad show >/dev/null 2>&1 || true
+            # Currently on normal workspace -> Save current workspace and switch to Special
+            echo "$current_ws" > "$STATE_FILE"
+
+            if is_special_active; then
+                # Special workspace already active -> Switch to it
+                swaymsg workspace "special" >/dev/null 2>&1 || true
             else
-                # Scratchpad is empty: launch a terminal formatted for scratchpad
-                foot --app-id=scratchpad-term &
+                # Special workspace is empty -> Switch to it and open full tiled terminal
+                swaymsg workspace "special" >/dev/null 2>&1 || true
+                foot &
             fi
         fi
         ;;
 
     move)
-        # Stash current focused window into scratchpad, or eject it back to tiling
-        if [ "$(is_focused_floating)" = "true" ]; then
-            # Eject back to tiling layout on current workspace
-            swaymsg "floating disable" >/dev/null 2>&1 || true
-            notify-send -t 1200 -u low -i window-new "Ejected to Workspace" "Window returned to normal tiling layout." 2>/dev/null || true
+        current_ws=$(get_focused_workspace)
+
+        if [ "$current_ws" = "special" ]; then
+            # On Special Workspace -> Eject window back to the previous normal workspace
+            target_ws=$(get_prev_workspace)
+            swaymsg "move container to workspace $target_ws" >/dev/null 2>&1 || true
+            notify-send -t 1200 -u low -i window-new "Ejected from Special" "Window returned to workspace $target_ws." 2>/dev/null || true
         else
-            # Stash into scratchpad: format comfortably and hide
-            win_name=$(swaymsg -t get_tree | jq -r '[.. | select(.focused? == true)] | .[0]?.name // "Window"')
-            swaymsg "floating enable, resize set 1350 850, move position center, move scratchpad" >/dev/null 2>&1 || true
-            notify-send -t 1500 -u low -i window-pin "Stashed in Scratchpad" "App '$win_name' is now in your $mod+s deck." 2>/dev/null || true
+            # On Normal Workspace -> Send window into the Special Workspace
+            win_name=$(swaymsg -t get_tree 2>/dev/null | jq -r '[.. | select(.focused? == true)] | .[0]?.name // "Window"')
+            echo "$current_ws" > "$STATE_FILE"
+            swaymsg "move container to workspace special" >/dev/null 2>&1 || true
+            notify-send -t 1500 -u low -i window-pin "Sent to Special Workspace" "'$win_name' moved to Special workspace." 2>/dev/null || true
         fi
         ;;
 
-    cycle)
-        swaymsg scratchpad show >/dev/null 2>&1 || true
-        ;;
-
     menu)
-        # List all windows in scratchpad and allow direct selection via Wofi
-        raw_json=$(swaymsg -t get_tree | jq '[.. | select(.name? == "__i3_scratch") | .. | select(.type? == "floating_con" or .type? == "con") | select(.name? != null and .name? != "__i3_scratch") | {id: .id, name: .name, app: (.app_id // .window_properties?.class // "App")}]')
+        # List all windows currently on Special Workspace via Wofi
+        raw_json=$(swaymsg -t get_tree 2>/dev/null | jq '[.. | select(.type? == "workspace" and .name? == "special") | .. | select(.type? == "con" or .type? == "floating_con") | select(.name? != null and .name? != "special") | {id: .id, name: .name, app: (.app_id // .window_properties?.class // "App")}]' 2>/dev/null || echo "[]")
         count=$(echo "$raw_json" | jq 'length')
 
         if [ "$count" -eq 0 ]; then
-            notify-send -t 1500 -u low -i dialog-information "Scratchpad Empty" "Press $mod+Shift+s on any window to stash it." 2>/dev/null || true
+            notify-send -t 1500 -u low -i dialog-information "Special Workspace Empty" "Press $mod+s to open Special Workspace, or $mod+Shift+s to send windows." 2>/dev/null || true
             exit 0
         fi
 
         options=$(echo "$raw_json" | jq -r '.[] | "\(.id) | \(.name)"')
-        selected=$(echo "$options" | wofi --dmenu -p "⚡ Scratchpad Deck:" -W 600 -H 350 || true)
+        selected=$(echo "$options" | wofi --dmenu -p "⚡ Special Workspace Windows:" -W 600 -H 350 || true)
 
         if [ -n "$selected" ]; then
             con_id=$(echo "$selected" | cut -d'|' -f1 | xargs)
-            swaymsg "[con_id=${con_id}] scratchpad show" >/dev/null 2>&1 || true
+            swaymsg "[con_id=${con_id}] focus" >/dev/null 2>&1 || true
         fi
         ;;
 esac
