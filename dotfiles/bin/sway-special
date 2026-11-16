@@ -2,7 +2,7 @@
 # ==============================================================================
 # ⚡ Special Workspace Suite (Omarchy Parity)
 # Dedicated full-featured workspace ("special") hidden from Waybar's
-# workspace numbers module. Full tiling, normal shortcuts ($mod+Return, Wofi),
+# workspace numbers module. Full normal tiling, shortcuts ($mod+Return, Wofi),
 # and seamless toggle back to previous workspace with $mod + s.
 # ==============================================================================
 
@@ -16,10 +16,6 @@ action="${1:-toggle}"
 
 get_focused_workspace() {
     swaymsg -t get_workspaces 2>/dev/null | jq -r '.[] | select(.focused==true) | .name' || echo "1"
-}
-
-is_special_active() {
-    swaymsg -t get_workspaces 2>/dev/null | jq -e '.[] | select(.name=="special")' >/dev/null 2>&1
 }
 
 get_prev_workspace() {
@@ -38,21 +34,13 @@ case "$action" in
         current_ws=$(get_focused_workspace)
 
         if [ "$current_ws" = "special" ]; then
-            # Currently on Special Workspace -> Return to the normal previous workspace
+            # Currently on Special Workspace -> Return to previous workspace
             target_ws=$(get_prev_workspace)
             swaymsg workspace "$target_ws" >/dev/null 2>&1 || true
         else
             # Currently on normal workspace -> Save current workspace and switch to Special
             echo "$current_ws" > "$STATE_FILE"
-
-            if is_special_active; then
-                # Special workspace already active -> Switch to it
-                swaymsg workspace "special" >/dev/null 2>&1 || true
-            else
-                # Special workspace is empty -> Switch to it and open full tiled terminal
-                swaymsg workspace "special" >/dev/null 2>&1 || true
-                foot &
-            fi
+            swaymsg workspace "special" >/dev/null 2>&1 || true
         fi
         ;;
 
@@ -60,12 +48,12 @@ case "$action" in
         current_ws=$(get_focused_workspace)
 
         if [ "$current_ws" = "special" ]; then
-            # On Special Workspace -> Eject window back to the previous normal workspace
+            # On Special Workspace -> Eject active window back to previous workspace
             target_ws=$(get_prev_workspace)
             swaymsg "move container to workspace $target_ws" >/dev/null 2>&1 || true
             notify-send -t 1200 -u low -i window-new "Ejected from Special" "Window returned to workspace $target_ws." 2>/dev/null || true
         else
-            # On Normal Workspace -> Send window into the Special Workspace
+            # On Normal Workspace -> Send active window into Special Workspace
             win_name=$(swaymsg -t get_tree 2>/dev/null | jq -r '[.. | select(.focused? == true)] | .[0]?.name // "Window"')
             echo "$current_ws" > "$STATE_FILE"
             swaymsg "move container to workspace special" >/dev/null 2>&1 || true
