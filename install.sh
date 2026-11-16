@@ -105,10 +105,12 @@ mkdir -p "$HOME/Pictures/Screenshots"
 # 8. Deploy dotfiles, scripts, and assets
 echo -e "\n${BLUE}⚙️  Step 5/7: Deploying Everforest dotfiles, scripts & icons...${NC}"
 cp -r "$SCRIPT_DIR/dotfiles/config/"* "$HOME/.config/"
+[ -f "$SCRIPT_DIR/dotfiles/config/gtk-2.0/gtkrc" ] && cp -f "$SCRIPT_DIR/dotfiles/config/gtk-2.0/gtkrc" "$HOME/.gtkrc-2.0"
 
 # Deploy custom scripts and set execution rights
 cp -a "$SCRIPT_DIR/dotfiles/bin/"* "$HOME/.local/bin/"
 chmod +x "$HOME/.local/bin/"*
+"$HOME/.local/bin/sway-theme-apply" 2>/dev/null || true
 sudo ln -sf "$HOME/.local/bin/sys-optimize" "/usr/local/bin/sys-optimize"
 sudo ln -sf "$HOME/.local/bin/brave-origin" "/usr/local/bin/brave-origin"
 sudo ln -sf "$HOME/.local/bin/yt-dlp-menu" "/usr/local/bin/yt-dlp-menu"

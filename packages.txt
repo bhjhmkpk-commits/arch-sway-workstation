@@ -131,3 +131,4 @@ greetd-tuigreet
 # Themes & Eye Care Dark Styling
 adw-gtk-theme
 papirus-icon-theme
+xsettingsd

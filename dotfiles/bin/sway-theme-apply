@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🎨 Arch Sway Workstation - Cohesive Everforest Dark Theming Enforcer
+# Ensures uniform dark eye-care styling across GTK2, GTK3, GTK4, Qt & GSettings
+# ==============================================================================
+
+set -euo pipefail
+
+GTK_THEME="adw-gtk3-dark"
+ICON_THEME="Papirus-Dark"
+FONT_NAME="JetBrainsMono Nerd Font 10"
+CURSOR_THEME="Adwaita"
+CURSOR_SIZE=24
+
+# 1. Apply to GNOME / GTK via GSettings (Dconf)
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface font-name "$FONT_NAME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-theme "$CURSOR_THEME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-size "$CURSOR_SIZE" 2>/dev/null || true
+
+    # Text editor (Mousepad) syntax theme
+    gsettings set org.xfce.mousepad.preferences.view color-scheme 'oblivion' 2>/dev/null || true
+    gsettings set org.xfce.mousepad.preferences.view font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
+fi
+
+# 2. Start xsettingsd daemon if available (for X11 / Xwayland applications)
+if command -v xsettingsd >/dev/null 2>&1; then
+    if ! pgrep -x xsettingsd >/dev/null 2>&1; then
+        xsettingsd &
+    fi
+fi
+
+# 3. Export to systemd & DBus session environment
+if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+    dbus-update-activation-environment --systemd \
+        GTK_THEME="$GTK_THEME" \
+        QT_QPA_PLATFORMTHEME="gtk3" 2>/dev/null || true
+fi

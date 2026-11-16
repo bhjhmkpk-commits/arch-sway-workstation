@@ -23,6 +23,21 @@
 @define-color error_color #e67e80;
 @define-color error_bg_color #4a2828;
 
+/* Standard GTK theme color aliases for full compatibility */
+@define-color theme_fg_color #e6e2d8;
+@define-color theme_text_color #e6e2d8;
+@define-color theme_bg_color #1e2a24;
+@define-color theme_base_color #23382f;
+@define-color theme_selected_bg_color #365042;
+@define-color theme_selected_fg_color #f2ede4;
+@define-color insensitive_bg_color #23382f;
+@define-color insensitive_fg_color #7f8c85;
+@define-color insensitive_base_color #1e2a24;
+@define-color borders #36453b;
+@define-color unfocused_borders #2d3b32;
+@define-color sidebar_bg_color #23382f;
+@define-color sidebar_fg_color #e6e2d8;
+
 /* Application Surfaces */
 window, .background {
     background-color: #1e2a24;
@@ -30,7 +45,7 @@ window, .background {
 }
 
 headerbar {
-    background-color: #23382f;
+    background-color: #1a241f;
     color: #e6e2d8;
     border-bottom: 1px solid #36453b;
 }
@@ -45,10 +60,12 @@ entry, searchbar {
     color: #e6e2d8;
     border: 1px solid #36453b;
     border-radius: 6px;
+    padding: 4px 8px;
 }
 
 entry:focus {
     border-color: #a7c080;
+    color: #f2ede4;
 }
 
 button {
@@ -56,15 +73,312 @@ button {
     color: #e6e2d8;
     border: 1px solid #36453b;
     border-radius: 6px;
+    padding: 4px 8px;
 }
 
 button:hover {
     background-color: #36453b;
     color: #f2ede4;
+    border-color: #a7c080;
 }
 
 button:active, button:checked {
     background-color: #365042;
     border-color: #a7c080;
     color: #f2ede4;
+}
+
+button.flat {
+    background-color: transparent;
+    border-color: transparent;
+    color: #e6e2d8;
+}
+
+button.flat:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+}
+
+/* Combo Box & Dropdowns (Fixes Xreader, PDF Arranger, etc.) */
+combobox,
+combobox button,
+combobox button.combo,
+combobox > box.linked > button.combo,
+combobox cellview {
+    background-color: #283b32;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+}
+
+combobox button:hover,
+combobox button.combo:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+    border-color: #a7c080;
+}
+
+combobox arrow {
+    color: #e6e2d8;
+    min-height: 14px;
+    min-width: 14px;
+}
+
+combobox window.popup,
+combobox menu,
+.combo menu {
+    background-color: #1e2a24;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+combobox menu menuitem,
+.combo menu menuitem {
+    color: #e6e2d8;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+combobox menu menuitem:hover,
+.combo menu menuitem:hover {
+    background-color: #365042;
+    color: #f2ede4;
+}
+
+/* Menus & Menubars */
+menubar {
+    background-color: #1a241f;
+    color: #e6e2d8;
+    border-bottom: 1px solid #36453b;
+}
+
+menubar > menuitem {
+    color: #e6e2d8;
+    padding: 4px 8px;
+}
+
+menubar > menuitem:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+}
+
+menu, .menu {
+    background-color: #1e2a24;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+menu menuitem, .menu menuitem {
+    color: #e6e2d8;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+menu menuitem:hover, .menu menuitem:hover {
+    background-color: #365042;
+    color: #f2ede4;
+}
+
+/* Popovers */
+popover, popover.background {
+    background-color: #1e2a24;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    padding: 6px;
+}
+
+popover list,
+popover listview,
+popover.combo list {
+    background-color: #1e2a24;
+    color: #e6e2d8;
+}
+
+popover list > row,
+popover.combo list > row {
+    color: #e6e2d8;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+popover list > row:hover,
+popover.combo list > row:hover,
+popover list > row:selected,
+popover.combo list > row:selected {
+    background-color: #365042;
+    color: #f2ede4;
+}
+
+/* Toolbars & Action Bars */
+toolbar, .toolbar {
+    background-color: #23382f;
+    color: #e6e2d8;
+    border-bottom: 1px solid #36453b;
+    padding: 2px 4px;
+}
+
+toolbar button,
+.toolbar button,
+toolbutton button {
+    background-color: #283b32;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin: 2px;
+}
+
+toolbar button:hover,
+.toolbar button:hover,
+toolbutton button:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+    border-color: #a7c080;
+}
+
+toolbar button:active,
+toolbar button:checked,
+.toolbar button:active,
+.toolbar button:checked,
+toolbutton button:active,
+toolbutton button:checked {
+    background-color: #365042;
+    border-color: #a7c080;
+    color: #f2ede4;
+}
+
+/* Notebooks & Tabs */
+notebook {
+    background-color: #1e2a24;
+}
+
+notebook > header {
+    background-color: #1a241f;
+    border-color: #36453b;
+}
+
+notebook > header tab {
+    background-color: #23382f;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px 6px 0 0;
+    padding: 6px 12px;
+    margin: 2px 2px 0 2px;
+}
+
+notebook > header tab:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+}
+
+notebook > header tab:checked {
+    background-color: #283b32;
+    color: #a7c080;
+    border-bottom-color: #283b32;
+}
+
+notebook > stack {
+    background-color: #1e2a24;
+}
+
+/* Spinbuttons */
+spinbutton {
+    background-color: #283b32;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+}
+
+spinbutton entry {
+    background-color: transparent;
+    border: none;
+    color: #e6e2d8;
+}
+
+spinbutton button {
+    background-color: transparent;
+    border: none;
+    color: #e6e2d8;
+}
+
+spinbutton button:hover {
+    background-color: #36453b;
+    color: #f2ede4;
+}
+
+/* Sliders & Scales */
+scale trough {
+    background-color: #283b32;
+    border: 1px solid #36453b;
+    border-radius: 4px;
+}
+
+scale highlight {
+    background-color: #a7c080;
+    border-radius: 4px;
+}
+
+scale slider {
+    background-color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 50%;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+scale slider:hover {
+    background-color: #f2ede4;
+    border-color: #a7c080;
+}
+
+/* Scrollbars */
+scrollbar {
+    background-color: transparent;
+}
+
+scrollbar slider {
+    background-color: #36453b;
+    border-radius: 8px;
+    min-width: 6px;
+    min-height: 6px;
+}
+
+scrollbar slider:hover {
+    background-color: #a7c080;
+}
+
+/* Paned & Sidebar */
+paned > separator {
+    background-color: #36453b;
+    min-width: 2px;
+    min-height: 2px;
+}
+
+.sidebar,
+sidebar,
+navigation-sidebar {
+    background-color: #23382f;
+    color: #e6e2d8;
+}
+
+/* Separators */
+separator {
+    background-color: #36453b;
+    min-width: 1px;
+    min-height: 1px;
+}
+
+/* Tooltips */
+tooltip, tooltip.background {
+    background-color: #1a241f;
+    color: #e6e2d8;
+    border: 1px solid #36453b;
+    border-radius: 6px;
+    padding: 4px 8px;
 }
