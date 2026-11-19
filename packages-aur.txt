@@ -2,3 +2,4 @@
 ventoy-bin
 universal-android-debloater-bin
 localsend-bin
+wlogout

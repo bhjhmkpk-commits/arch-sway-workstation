@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# power-menu - Premium Wayland Power & Session Dialog for Sway
+# Theme: Everforest Dark (Zero background daemon load)
+# ==============================================================================
+
+set -euo pipefail
+
+# 1. Toggle: Close power menu if already running
+if pidof wlogout >/dev/null 2>&1; then
+    killall -q wlogout
+    exit 0
+fi
+
+# Ensure working directory is set to wlogout configuration directory
+cd "${HOME}/.config/wlogout" 2>/dev/null || true
+
+# 2. Prefer modern fullscreen layer-shell overlay via wlogout
+if command -v wlogout >/dev/null 2>&1; then
+    # Dynamically detect focused output resolution for perfect proportional card dimensions
+    OUTPUT_RES="$(swaymsg -t get_outputs 2>/dev/null | jq -r '.[] | select(.focused) | "\(.rect.width) \(.rect.height)"' 2>/dev/null | head -n1 || true)"
+    
+    RES_W="$(echo "${OUTPUT_RES}" | awk '{print $1}')"
+    RES_H="$(echo "${OUTPUT_RES}" | awk '{print $2}')"
+    
+    # Fallback to standard 1080p if detection fails
+    if [ -z "${RES_W:-}" ] || [ -z "${RES_H:-}" ] || [ "${RES_W}" -le 0 ] || [ "${RES_H}" -le 0 ]; then
+        RES_W=1920
+        RES_H=1080
+    fi
+    
+    # Calculate margins: ~16% horizontal, ~36% vertical for centered modern dock tiles
+    MARGIN_H=$(( RES_W * 16 / 100 ))
+    MARGIN_V=$(( RES_H * 36 / 100 ))
+    
+    exec wlogout \
+        --buttons-per-row 6 \
+        --column-spacing 16 \
+        --row-spacing 16 \
+        --margin-left "${MARGIN_H}" \
+        --margin-right "${MARGIN_H}" \
+        --margin-top "${MARGIN_V}" \
+        --margin-bottom "${MARGIN_V}" \
+        --protocol layer-shell \
+        --show-binds
+fi
+
+# 3. Graceful Fallback: Wofi dmenu if wlogout is unavailable
+CHOSEN="$(printf "🔒 Lock Workstation (l)\n🌙 Sleep / Suspend (u)\n🚪 Logout Sway (e)\n❄️ Hibernate (h)\n🔄 Reboot System (r)\n🛑 Power Off / Shutdown (s)" | \
+    wofi --dmenu --prompt "Session Control" --lines 6 --width 380 --style "${HOME}/.config/wofi/style.css" 2>/dev/null || true)"
+
+case "${CHOSEN}" in
+    *"Lock"*)        exec swaylock ;;
+    *"Sleep"*)       exec systemctl suspend ;;
+    *"Logout"*)      exec swaymsg exit ;;
+    *"Hibernate"*)   exec systemctl hibernate ;;
+    *"Reboot"*)      exec systemctl reboot -i ;;
+    *"Power Off"*)   exec systemctl poweroff -i ;;
+    *)               exit 0 ;;
+esac

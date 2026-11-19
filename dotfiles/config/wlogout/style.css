@@ -1,0 +1,98 @@
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.1, 0, 0, 1);
+}
+
+window {
+    background-color: rgba(30, 35, 38, 0.88);
+}
+
+button {
+    color: #d3c6aa;
+    background-color: #272e33;
+    border: 2px solid #3c4841;
+    border-radius: 20px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    margin: 8px;
+    background-repeat: no-repeat;
+    background-position: center 30%;
+    background-size: 28%;
+    padding-bottom: 26px;
+    outline-style: none;
+}
+
+button:focus,
+button:active,
+button:hover {
+    background-color: #2e383c;
+    border-radius: 22px;
+}
+
+/* Individual Tile Styling & Glow Effects */
+#lock {
+    background-image: image(url("/home/bohar/.config/wlogout/icons/lock.svg"), url("/usr/share/wlogout/assets/lock.svg"));
+}
+#lock:focus,
+#lock:active,
+#lock:hover {
+    border-color: #7fbbb3;
+    color: #7fbbb3;
+    box-shadow: 0 0 22px rgba(127, 187, 179, 0.38);
+}
+
+#suspend {
+    background-image: image(url("/home/bohar/.config/wlogout/icons/suspend.svg"), url("/usr/share/wlogout/assets/suspend.svg"));
+}
+#suspend:focus,
+#suspend:active,
+#suspend:hover {
+    border-color: #a7c080;
+    color: #a7c080;
+    box-shadow: 0 0 22px rgba(167, 192, 128, 0.38);
+}
+
+#logout {
+    background-image: image(url("/home/bohar/.config/wlogout/icons/logout.svg"), url("/usr/share/wlogout/assets/logout.svg"));
+}
+#logout:focus,
+#logout:active,
+#logout:hover {
+    border-color: #e69875;
+    color: #e69875;
+    box-shadow: 0 0 22px rgba(230, 152, 117, 0.38);
+}
+
+#hibernate {
+    background-image: image(url("/home/bohar/.config/wlogout/icons/hibernate.svg"), url("/usr/share/wlogout/assets/hibernate.svg"));
+}
+#hibernate:focus,
+#hibernate:active,
+#hibernate:hover {
+    border-color: #83c092;
+    color: #83c092;
+    box-shadow: 0 0 22px rgba(131, 192, 146, 0.38);
+}
+
+#reboot {
+    background-image: image(url("/home/bohar/.config/wlogout/icons/reboot.svg"), url("/usr/share/wlogout/assets/reboot.svg"));
+}
+#reboot:focus,
+#reboot:active,
+#reboot:hover {
+    border-color: #dbbc7f;
+    color: #dbbc7f;
+    box-shadow: 0 0 22px rgba(219, 188, 127, 0.38);
+}
+
+#shutdown {
+    background-image: image(url("/home/bohar/.config/wlogout/icons/shutdown.svg"), url("/usr/share/wlogout/assets/shutdown.svg"));
+}
+#shutdown:focus,
+#shutdown:active,
+#shutdown:hover {
+    border-color: #e67e80;
+    color: #e67e80;
+    box-shadow: 0 0 22px rgba(230, 126, 128, 0.38);
+}
