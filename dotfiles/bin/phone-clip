@@ -228,6 +228,80 @@ class ClipboardWatcher(threading.Thread):
                 pass
             time.sleep(0.4)
 
+ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#272e33"/>
+      <stop offset="100%" stop-color="#1e2326"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7c080"/>
+      <stop offset="100%" stop-color="#7fbbb3"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#3c4841" stroke-width="12"/>
+  <rect x="140" y="76" width="232" height="360" rx="36" fill="#232a2e" stroke="url(#accent)" stroke-width="14"/>
+  <rect x="162" y="124" width="188" height="254" rx="18" fill="#1e2326"/>
+  <rect x="226" y="98" width="60" height="8" rx="4" fill="#4f5b53"/>
+  <rect x="216" y="408" width="80" height="8" rx="4" fill="#a7c080"/>
+  <path d="M 230 196 A 38 38 0 0 1 294 218 L 306 206 L 306 244 L 268 244 L 282 230 A 22 22 0 0 0 230 214 Z" fill="#a7c080"/>
+  <path d="M 282 284 A 38 38 0 0 1 218 262 L 206 274 L 206 236 L 244 236 L 230 250 A 22 22 0 0 0 282 266 Z" fill="#7fbbb3"/>
+</svg>"""
+
+ICON_PNG_CACHE = "/tmp/phone_bridge_icon_512.png"
+
+def get_icon_png():
+    if os.path.exists(ICON_PNG_CACHE):
+        try:
+            with open(ICON_PNG_CACHE, "rb") as f:
+                return f.read()
+        except Exception:
+            pass
+    try:
+        res = subprocess.run(["rsvg-convert", "-w", "512", "-h", "512"], input=ICON_SVG.encode("utf-8"), capture_output=True, timeout=2.0)
+        if res.returncode == 0 and res.stdout:
+            with open(ICON_PNG_CACHE, "wb") as f:
+                f.write(res.stdout)
+            return res.stdout
+    except Exception:
+        pass
+    return b""
+
+SW_JS = """// Phone Bridge Minimal Service Worker
+self.addEventListener('install', (e) => self.skipWaiting());
+self.addEventListener('activate', (e) => self.clients.claim());
+self.addEventListener('fetch', (e) => {
+  e.respondWith(fetch(e.request).catch(() => new Response("Offline", {status: 503})));
+});
+"""
+
+MANIFEST_JSON = json.dumps({
+    "name": "Phone <> PC Bridge",
+    "short_name": "Phone Bridge",
+    "description": "Wireless clipboard sync, file drop & photo bridge for Arch Sway Workstation",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#1e2326",
+    "theme_color": "#1e2326",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+})
+
 HTML_MOBILE_APP = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -236,8 +310,12 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
 <meta name="theme-color" content="#1e2326">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Phone Bridge">
+<meta name="application-name" content="Phone Bridge">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📱</text></svg>">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.png">
 <title>📱 Phone &lt;&gt; PC Bridge</title>
 <style>
   :root {
@@ -501,6 +579,15 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
   </nav>
 
   <main class="main-container">
+
+    <!-- HOME SCREEN SHORTCUT HINT -->
+    <div id="pwa-hint" style="background: #232a2e; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; display: none; align-items: center; justify-content: space-between; gap: 8px;">
+      <div>
+        <span style="font-weight: 700; color: var(--green);">📲 Add to Home Screen:</span>
+        <span style="color: var(--text); display: block; font-size: 12px; margin-top: 2px;">Tap browser menu (⋮) → select <b>Create shortcut</b></span>
+      </div>
+      <button onclick="dismissPwaHint()" style="background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px;">✕</button>
+    </div>
 
     <!-- TAB 1: LIVE CLIPBOARD -->
     <div id="tab-clip" class="tab-content active">
@@ -956,6 +1043,21 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
       return div.innerHTML;
     }
 
+    function dismissPwaHint() {
+      const hint = document.getElementById('pwa-hint');
+      if (hint) hint.style.display = 'none';
+      localStorage.setItem('dismiss_pwa_hint', 'true');
+    }
+
+    if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('dismiss_pwa_hint')) {
+      const hint = document.getElementById('pwa-hint');
+      if (hint) hint.style.display = 'flex';
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
     checkAuth();
   </script>
 </body>
@@ -975,8 +1077,8 @@ class PhoneBridgeHandler(http.server.BaseHTTPRequestHandler):
         # Check header X-Auth-Token
         if self.headers.get("X-Auth-Token", "").lower() == SESSION_TOKEN.lower():
             return True
-        # Allow initial HTML page load, favicon, and status check
-        if parsed.path in ("/", "/index.html", "/favicon.ico", "/status"):
+        # Allow initial HTML page load, favicon, status check, and PWA assets
+        if parsed.path in ("/", "/index.html", "/favicon.ico", "/status", "/manifest.json", "/sw.js", "/icon.svg", "/icon.png"):
             return True
         return False
 
@@ -995,6 +1097,40 @@ class PhoneBridgeHandler(http.server.BaseHTTPRequestHandler):
         if path == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
+            return
+
+        if path == "/manifest.json":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/manifest+json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(MANIFEST_JSON.encode("utf-8"))
+            return
+
+        if path == "/sw.js":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/javascript; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(SW_JS.encode("utf-8"))
+            return
+
+        if path == "/icon.svg":
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.end_headers()
+            self.wfile.write(ICON_SVG.encode("utf-8"))
+            return
+
+        if path == "/icon.png":
+            png_bytes = get_icon_png()
+            if png_bytes:
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(png_bytes)))
+                self.end_headers()
+                self.wfile.write(png_bytes)
+            else:
+                self.send_error(404)
             return
 
         if path == "/status":
@@ -1244,11 +1380,11 @@ def main():
         except Exception:
             print(f"  Install qrencode to view QR in terminal: sudo pacman -S qrencode")
 
-        print(f"\n{BOLD}🔗 Mobile Web URL  :{RESET} {BLUE}{url}{RESET}")
-        print(f"{BOLD}🔑 Security PIN    :{RESET} {YELLOW}{SESSION_TOKEN}{RESET}")
-        print(f"{BOLD}⚡ Features Active :{RESET} Instant 0ms SSE Sync • Cliphist History • Any File Drop • Open Links")
-        print(f"{BOLD}📶 Status          :{RESET} {GREEN}Listening on port {PORT}{RESET} (Press {BOLD}Ctrl+C{RESET} or close window to exit)\n")
-        print(f"{GREEN}── Live Activity Log ─────────────────────────────────────────────────────{RESET}")
+        print(f"\n  {BOLD}🔗 Mobile URL  :{RESET} {BLUE}{url}{RESET}")
+        print(f"  {BOLD}🔑 PIN Code    :{RESET} {YELLOW}{SESSION_TOKEN}{RESET}")
+        print(f"  {BOLD}⚡ Active Sync :{RESET} 0ms SSE Stream • History • File Drop • Link Launch")
+        print(f"  {BOLD}📶 Server      :{RESET} {GREEN}http://{ip}:{PORT}{RESET} • Press {BOLD}Ctrl+C{RESET} to exit\n")
+        print(f"{GREEN}── Live Activity Log ────────────────────────────────────────────────────────{RESET}")
         log_event("🚀", "Bridge dashboard ready. Standing by for mobile connections.")
     else:
         log_event("🚀", f"Bridge server running on http://{ip}:{PORT}")
