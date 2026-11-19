@@ -33,7 +33,7 @@ ENTRIES=(
   "💡 Tealdeer      │ Real-world practical cheatsheets for any Linux command │ Command: tldr <cmd> (e.g. tldr tar)|foot -e bash -c 'echo \"Usage: tldr <command> (e.g., tldr tar, tldr adb)\"; exec bash'"
   "🐍 UV Runner     │ Modern isolated runner for Python & AI scripts         │ Command: uv run <script.py>|foot -e bash -c 'echo \"Usage: uv run <script.py>\"; exec bash'"
   "🔍 ShellCheck    │ Static analysis bug & syntax linter for bash scripts   │ Command: shellcheck <script>|foot -e bash -c 'echo \"Usage: shellcheck <script.sh>\"; exec bash'"
-  "🖥️ Btop Monitor  │ CPU, GPU, memory, processes & network monitor         │ Hotkey: \$mod+Escape  •  CLI: btop|foot --app-id=btop -e btop"
+  "🖥️ Btop Monitor  │ CPU, GPU, memory, processes & network monitor         │ Hotkey: \$mod+Shift+e  •  CLI: btop|foot --app-id=btop -e btop"
   "📋 Cliphist      │ Searchable clipboard history manager menu              │ Hotkey: \$mod+Shift+v|~/.local/bin/cliphist-menu"
   "📷 Satty Screen  │ Full screen or cropped screenshot with annotation     │ Hotkey: Print / Shift+Print|~/.local/bin/screenshot area"
   "🌙 Night Light   │ Eye-care blue light reduction filter (wlsunset)        │ Hotkey: \$mod+n (toggle) • \$mod+Shift+n|~/.local/bin/nightlight toggle"
@@ -50,7 +50,7 @@ ENTRIES=(
   "💬 WhatsApp      │ WhatsApp Web messaging PWA                             │ Hotkey: \$mod+Alt+w  •  Web App|chromium --app='https://web.whatsapp.com' --name='webapp-whatsapp-web' --class='WebApp-whatsapp-web'"
   "✉️ Gmail         │ Google Mail inbox PWA                                  │ Hotkey: \$mod+Alt+m  •  Web App|chromium --app='https://mail.google.com' --name='webapp-gmail' --class='WebApp-gmail'"
   "🔒 Swaylock      │ Secure Wayland session lock screen                     │ Hotkey: \$mod+Backspace / \$mod+Ctrl+l|swaylock"
-  "⚡ Power Menu    │ Instant Power Off, Reboot, or Logout Dialog            │ Hotkey: \$mod+Shift+e  •  CLI: shutdown|~/.local/bin/power-menu"
+  "⚡ Power Menu    │ Instant Power Off, Reboot, or Logout Dialog            │ Hotkey: \$mod+Escape  •  CLI: shutdown|~/.local/bin/power-menu"
 )
 
 LABELS=""

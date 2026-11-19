@@ -62,10 +62,10 @@ bindsym $mod+Shift+v exec ~/.local/bin/cliphist-menu
 bindsym $mod+c exec ~/.local/bin/universal-copy
 bindsym $mod+v exec ~/.local/bin/universal-paste
 bindsym $mod+Ctrl+c exec ~/.local/bin/clip-push
-bindsym $mod+Escape exec $term --app-id=btop -e btop
+bindsym $mod+Escape exec ~/.local/bin/power-menu
 bindsym $mod+Shift+r reload
 bindsym $mod+Backspace exec swaylock
-bindsym $mod+Shift+e exec ~/.local/bin/power-menu
+bindsym $mod+Shift+e exec $term --app-id=btop -e btop
 
 # ── 2. Applications & Workstation Utilities ────────────────────────────────────
 # Web Browsers
