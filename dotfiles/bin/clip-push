@@ -8,8 +8,8 @@ IMAGE_CACHE="/tmp/phone_clip_image.png"
 
 # Check if phone-clip server is active
 if ! pgrep -f "phone-clip" >/dev/null 2>&1; then
-    # Start phone-clip server silently via systemd-run or nohup
-    nohup ~/.local/bin/phone-clip >/dev/null 2>&1 &
+    # Start phone-clip server silently via systemd or nohup
+    systemctl --user start phone-clip.service 2>/dev/null || nohup ~/.local/bin/phone-clip >/dev/null 2>&1 &
     sleep 0.5
 fi
 
@@ -18,7 +18,7 @@ MIME_TYPES=$(wl-paste -l 2>/dev/null || true)
 
 if echo "$MIME_TYPES" | grep -qE "image/png|image/jpeg"; then
     wl-paste -t image/png > "$IMAGE_CACHE" 2>/dev/null
-    notify-send -a "Phone Sync" -i camera-photo "📸 Image Pushed to Phone!" "Open 'Sync' on your phone to view or copy."
+    notify-send -a "Phone Sync" -i camera-photo "📸 Image Pushed to Phone!" "Open Phone Bridge on your phone to view or download."
 else
     TEXT=$(wl-paste 2>/dev/null || true)
     if [[ -z "$TEXT" ]]; then
