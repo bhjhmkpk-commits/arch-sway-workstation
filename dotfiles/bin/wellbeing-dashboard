@@ -214,6 +214,7 @@ class WellbeingDashboard(Gtk.Window):
         
         self.goal_buttons = {}
         self.preset_buttons = {}
+        self.selected_day_idx = 6 # Default to Today (7th day)
         self.state = self.fetch_state()
         
         # Outer Layout
@@ -394,7 +395,7 @@ class WellbeingDashboard(Gtk.Window):
         
         c_head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         ch_title = Gtk.Label(xalign=0)
-        ch_title.set_markup("<span weight='bold' color='#a7c080'>📊 Last 7 Days Screen Time</span>")
+        ch_title.set_markup("<span weight='bold' color='#a7c080'>📊 Last 7 Days Screen Time</span> <span size='8500' color='#859289'>(Click bar to select)</span>")
         c_head.pack_start(ch_title, True, True, 0)
         
         self.avg_lbl = Gtk.Label(xalign=1)
@@ -404,23 +405,25 @@ class WellbeingDashboard(Gtk.Window):
         
         self.chart_area = Gtk.DrawingArea()
         self.chart_area.set_size_request(-1, 145)
+        self.chart_area.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.chart_area.connect("draw", self.draw_weekly_chart)
+        self.chart_area.connect("button-press-event", self.on_chart_clicked)
         chart_card.pack_start(self.chart_area, True, True, 0)
         
         panel.pack_start(chart_card, False, False, 0)
         
-        # 2. Top Apps Breakdown Card
+        # 2. Day-wise Top Apps Breakdown Card
         apps_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         apps_card.get_style_context().add_class("card")
         
         a_head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        a_title = Gtk.Label(xalign=0)
-        a_title.set_markup("<span weight='bold' color='#a7c080'>📱 Top Applications (Past Week)</span>")
-        a_head.pack_start(a_title, True, True, 0)
+        self.app_card_title = Gtk.Label(xalign=0)
+        self.app_card_title.set_markup("<span weight='bold' color='#a7c080'>📱 App Usage (Today)</span>")
+        a_head.pack_start(self.app_card_title, True, True, 0)
         
-        self.weekly_total_lbl = Gtk.Label(xalign=1)
-        self.weekly_total_lbl.set_markup("<span size='9500' color='#859289'>Weekly Total: 0h</span>")
-        a_head.pack_end(self.weekly_total_lbl, False, False, 0)
+        self.day_total_lbl = Gtk.Label(xalign=1)
+        self.day_total_lbl.set_markup("<span size='9500' color='#859289'>Total: 0h</span>")
+        a_head.pack_end(self.day_total_lbl, False, False, 0)
         apps_card.pack_start(a_head, False, False, 0)
         
         self.apps_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -454,12 +457,30 @@ class WellbeingDashboard(Gtk.Window):
                 "day": day_name,
                 "sot_seconds": sot,
                 "sot_hours": sot_h,
+                "apps": apps,
                 "is_today": (d == today)
             })
             for app, sec in apps.items():
                 weekly_apps[app] = weekly_apps.get(app, 0) + sec
                 
         return daily_sot, weekly_apps
+
+    def on_chart_clicked(self, widget, event):
+        if event.button == 1: # Left click
+            width = widget.get_allocated_width()
+            pad_left = 32
+            pad_right = 16
+            chart_w = width - pad_left - pad_right
+            slot_w = chart_w / 7.0
+            click_x = event.x - pad_left
+            if 0 <= click_x <= chart_w:
+                idx = int(click_x // slot_w)
+                if 0 <= idx < 7:
+                    self.selected_day_idx = idx
+                    self.chart_area.queue_draw()
+                    self.update_apps_ui()
+                    return True
+        return False
 
     def draw_weekly_chart(self, widget, cr):
         width = widget.get_allocated_width()
@@ -517,6 +538,8 @@ class WellbeingDashboard(Gtk.Window):
             val_h = max(3.0, val_h)
             by = pad_top + chart_h - val_h
             
+            is_selected = (i == self.selected_day_idx)
+            
             if d["is_today"]:
                 cr.set_source_rgb(0.498, 0.733, 0.702) # #7fbbb3 (Cyan)
             elif d["sot_hours"] > goal_h:
@@ -533,18 +556,30 @@ class WellbeingDashboard(Gtk.Window):
             cr.close_path()
             cr.fill()
             
+            # Active selection outline
+            if is_selected:
+                cr.set_source_rgba(0.95, 0.95, 0.95, 0.85)
+                cr.set_line_width(1.8)
+                cr.new_sub_path()
+                cr.arc(bx + bar_w - radius, by + radius, radius, -1.5707963, 0)
+                cr.line_to(bx + bar_w, pad_top + chart_h)
+                cr.line_to(bx, pad_top + chart_h)
+                cr.arc(bx + radius, by + radius, radius, 3.1415926, 4.7123889)
+                cr.close_path()
+                cr.stroke()
+            
             # Text value above bar
             cr.set_source_rgb(0.827, 0.776, 0.667)
             cr.set_font_size(11)
-            cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD if d["is_today"] else cairo.FONT_WEIGHT_NORMAL)
+            cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD if (d["is_today"] or is_selected) else cairo.FONT_WEIGHT_NORMAL)
             txt = f"{d['sot_hours']:.1f}h"
             ext = cr.text_extents(txt)
             cr.move_to(cx - (ext.width / 2.0), by - 5)
             cr.show_text(txt)
             
             # Day name below bar
-            if d["is_today"]:
-                cr.set_source_rgb(0.498, 0.733, 0.702)
+            if is_selected or d["is_today"]:
+                cr.set_source_rgb(0.498, 0.733, 0.702) if d["is_today"] else cr.set_source_rgb(0.95, 0.95, 0.95)
                 cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
             else:
                 cr.set_source_rgb(0.522, 0.573, 0.537)
@@ -553,6 +588,12 @@ class WellbeingDashboard(Gtk.Window):
             ext2 = cr.text_extents(d["day"])
             cr.move_to(cx - (ext2.width / 2.0), pad_top + chart_h + 16)
             cr.show_text(d["day"])
+            
+            # Selection dot indicator
+            if is_selected:
+                cr.set_source_rgb(0.498, 0.733, 0.702)
+                cr.arc(cx, pad_top + chart_h + 23, 2.2, 0, 6.2831853)
+                cr.fill()
 
     def update_left_ui(self):
         ec = self.state.get("eye_care", {})
@@ -617,37 +658,54 @@ class WellbeingDashboard(Gtk.Window):
     def update_apps_ui(self):
         daily_sot, weekly_apps = self.get_7day_data()
         
-        total_sec = sum(weekly_apps.values())
-        avg_h = (total_sec / 7.0) / 3600.0
+        total_sec_week = sum(weekly_apps.values())
+        avg_h = (total_sec_week / 7.0) / 3600.0
         self.avg_lbl.set_markup(f"<span size='9500' color='#859289'>Daily Avg: <b>{avg_h:.1f}h</b></span>")
-        self.weekly_total_lbl.set_markup(f"<span size='9500' color='#859289'>Weekly Total: <b>{total_sec/3600.0:.1f}h</b></span>")
+        
+        if self.selected_day_idx >= len(daily_sot):
+            self.selected_day_idx = len(daily_sot) - 1
+            
+        cur_day = daily_sot[self.selected_day_idx]
+        day_apps = cur_day.get("apps", {})
+        day_total_sec = cur_day.get("sot_seconds", 0)
+        
+        day_title = "Today" if cur_day["is_today"] else f"{cur_day['day']} ({cur_day['date']})"
+        self.app_card_title.set_markup(f"<span weight='bold' color='#a7c080'>📱 App Usage: {day_title}</span>")
+        self.day_total_lbl.set_markup(f"<span size='9500' color='#859289'>Total: <b>{format_sot(day_total_sec)}</b></span>")
         
         for child in self.apps_container.get_children():
             self.apps_container.remove(child)
             
-        top_apps = sorted(weekly_apps.items(), key=lambda x: x[1], reverse=True)[:6]
+        top_apps = sorted(day_apps.items(), key=lambda x: x[1], reverse=True)[:6]
         max_app_sec = top_apps[0][1] if top_apps else 1
         
-        for idx, (app, sec) in enumerate(top_apps, 1):
-            row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-            
-            label_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            name_lbl = Gtk.Label(xalign=0)
-            name_lbl.set_markup(f"<span size='10000' weight='bold' color='#d3c6aa'>{idx}. {app}</span>")
-            label_row.pack_start(name_lbl, True, True, 0)
-            
-            pct = (sec / total_sec * 100.0) if total_sec > 0 else 0
-            time_lbl = Gtk.Label(xalign=1)
-            time_lbl.set_markup(f"<span size='9500' color='#859289'>{format_sot(sec)}  •  {pct:.1f}%</span>")
-            label_row.pack_end(time_lbl, False, False, 0)
-            row.pack_start(label_row, False, False, 0)
-            
-            bar = Gtk.ProgressBar()
-            bar.set_fraction(sec / max_app_sec)
-            bar.get_style_context().add_class(f"rank-{idx}")
-            row.pack_start(bar, False, False, 0)
-            
-            self.apps_container.pack_start(row, False, False, 0)
+        if not top_apps or day_total_sec == 0:
+            empty_lbl = Gtk.Label(xalign=0.5)
+            empty_lbl.set_markup("<span size='10000' color='#859289' style='italic'>No application usage recorded for this day.</span>")
+            empty_lbl.set_margin_top(22)
+            empty_lbl.set_margin_bottom(22)
+            self.apps_container.pack_start(empty_lbl, True, True, 0)
+        else:
+            for idx, (app, sec) in enumerate(top_apps, 1):
+                row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                
+                label_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                name_lbl = Gtk.Label(xalign=0)
+                name_lbl.set_markup(f"<span size='10000' weight='bold' color='#d3c6aa'>{idx}. {app}</span>")
+                label_row.pack_start(name_lbl, True, True, 0)
+                
+                pct = (sec / day_total_sec * 100.0) if day_total_sec > 0 else 0
+                time_lbl = Gtk.Label(xalign=1)
+                time_lbl.set_markup(f"<span size='9500' color='#859289'>{format_sot(sec)}  •  {pct:.1f}%</span>")
+                label_row.pack_end(time_lbl, False, False, 0)
+                row.pack_start(label_row, False, False, 0)
+                
+                bar = Gtk.ProgressBar()
+                bar.set_fraction(sec / max_app_sec)
+                bar.get_style_context().add_class(f"rank-{idx}")
+                row.pack_start(bar, False, False, 0)
+                
+                self.apps_container.pack_start(row, False, False, 0)
             
         self.apps_container.show_all()
 
@@ -675,6 +733,8 @@ class WellbeingDashboard(Gtk.Window):
     def on_tick(self):
         self.state = self.fetch_state()
         self.update_left_ui()
+        if self.selected_day_idx == 6: # If viewing Today, refresh live app breakdown
+            self.update_apps_ui()
         self.chart_area.queue_draw()
         return True
 
