@@ -579,6 +579,15 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
     text-align: center;
     box-shadow: 0 12px 36px rgba(0,0,0,0.6);
   }
+  :fullscreen, :-webkit-full-screen {
+    background: var(--bg);
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+  }
+  :fullscreen .app-header, :-webkit-full-screen .app-header {
+    padding-top: max(14px, env(safe-area-inset-top));
+  }
 </style>
 </head>
 <body>
@@ -590,9 +599,14 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
         <h1>Phone &lt;&gt; PC Bridge</h1>
       </div>
     </div>
-    <div class="status-pill" id="status-pill">
-      <span class="dot"></span>
-      <span id="status-text">Connected</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="btn-fullscreen" class="btn-mini" onclick="toggleFullscreen()" style="padding: 5px 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+        <span id="fs-icon">⛶</span> <span id="fs-text">Fullscreen</span>
+      </button>
+      <div class="status-pill" id="status-pill">
+        <span class="dot"></span>
+        <span id="status-text">Connected</span>
+      </div>
     </div>
   </header>
 
@@ -605,13 +619,15 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
 
   <main class="main-container">
 
-    <!-- HOME SCREEN SHORTCUT HINT -->
-    <div id="pwa-hint" style="background: #232a2e; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; display: none; align-items: center; justify-content: space-between; gap: 8px;">
+    <!-- FULLSCREEN & SHORTCUT HELPER BANNER -->
+    <div id="pwa-hint" style="background: #232a2e; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
       <div>
-        <span style="font-weight: 700; color: var(--green);">📲 Add to Home Screen:</span>
-        <span style="color: var(--text); display: block; font-size: 12px; margin-top: 2px;">Tap browser menu (⋮) → select <b>Create shortcut</b></span>
+        <span style="font-weight: 700; color: var(--green);">⛶ Edge-to-Edge Mode:</span>
+        <span style="color: var(--text); display: block; font-size: 12px; margin-top: 2px;">Hide browser URL & navigation bars</span>
       </div>
-      <button onclick="dismissPwaHint()" style="background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px;">✕</button>
+      <button class="btn btn-green" onclick="toggleFullscreen()" style="width: auto; padding: 8px 12px; margin: 0; font-size: 12px; white-space: nowrap;">
+        ⛶ Go Fullscreen
+      </button>
     </div>
 
     <!-- TAB 1: LIVE CLIPBOARD -->
@@ -1169,16 +1185,45 @@ HTML_MOBILE_APP = r"""<!DOCTYPE html>
       return div.innerHTML;
     }
 
-    function dismissPwaHint() {
-      const hint = document.getElementById('pwa-hint');
-      if (hint) hint.style.display = 'none';
-      localStorage.setItem('dismiss_pwa_hint', 'true');
+    function toggleFullscreen() {
+      const doc = document;
+      const docEl = document.documentElement;
+      const isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement;
+
+      if (!isFs) {
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(() => {});
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen().catch(() => {});
+        }
+      } else {
+        if (doc.exitFullscreen) {
+          doc.exitFullscreen().catch(() => {});
+        } else if (doc.webkitExitFullscreen) {
+          doc.webkitExitFullscreen().catch(() => {});
+        }
+      }
     }
 
-    if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('dismiss_pwa_hint')) {
-      const hint = document.getElementById('pwa-hint');
-      if (hint) hint.style.display = 'flex';
+    function updateFullscreenUI() {
+      const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+      const icon = document.getElementById("fs-icon");
+      const text = document.getElementById("fs-text");
+      const hint = document.getElementById("pwa-hint");
+
+      if (isFs) {
+        if (icon) icon.innerText = "🗗";
+        if (text) text.innerText = "Exit";
+        if (hint) hint.style.display = "none";
+      } else {
+        if (icon) icon.innerText = "⛶";
+        if (text) text.innerText = "Fullscreen";
+        if (hint) hint.style.display = "flex";
+      }
     }
+
+    document.addEventListener("fullscreenchange", updateFullscreenUI);
+    document.addEventListener("webkitfullscreenchange", updateFullscreenUI);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
