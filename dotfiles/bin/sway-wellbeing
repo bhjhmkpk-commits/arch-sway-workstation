@@ -672,9 +672,21 @@ def run_stream():
             sys.stdout.flush()
         time.sleep(1)
 
-# ── Interactive Menu (Wofi) ───────────────────────────────────────────────────
+# ── Interactive Menu (Dashboard / Wofi Fallback) ──────────────────────────────
 
 def run_menu():
+    # Prefer rich native GTK Wellbeing Dashboard
+    candidates = [
+        Path(__file__).parent / "wellbeing-dashboard",
+        Path.home() / ".local/bin/wellbeing-dashboard",
+        Path("/usr/local/bin/wellbeing-dashboard"),
+    ]
+    for c in candidates:
+        if c.exists() and os.access(str(c), os.X_OK):
+            subprocess.Popen([str(c)])
+            return
+
+    # Fallback to Wofi if GUI dashboard is not available
     menu_items = [
         "⏸  Pause / Resume Eye Timer (Screen time keeps recording)",
         "☕  Take Break Now (15 min)",

@@ -1,0 +1,687 @@
+#!/usr/bin/env python3
+"""
+🌿 Arch Sway Workstation - Native Digital Wellbeing & Eye Care Dashboard
+Rich GTK 3 + Cairo graphical dashboard with 7-day screen time chart and app usage analytics.
+Zero background idle load (runs purely on-demand, toggles closed with Esc or shortcut).
+"""
+
+import sys
+import os
+import json
+import time
+import socket
+import subprocess
+from pathlib import Path
+from datetime import datetime, timedelta
+
+# Check for existing instance and toggle close
+current_pid = os.getpid()
+try:
+    pgrep_out = subprocess.run(["pgrep", "-f", "wellbeing-dashboard"], capture_output=True, text=True).stdout
+    other_pids = [int(p) for p in pgrep_out.strip().split() if p and int(p) != current_pid]
+    if other_pids:
+        for p in other_pids:
+            try:
+                os.kill(p, 15) # SIGTERM
+            except Exception:
+                pass
+        sys.exit(0)
+except Exception:
+    pass
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GLib
+import cairo
+
+GLib.set_prgname("wellbeing-dashboard")
+GLib.set_application_name("Digital Wellbeing & Screen Care")
+
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "wellbeing"
+STATE_FILE = STATE_DIR / "state.json"
+SOCK_FILE = STATE_DIR / "daemon.sock"
+
+DEFAULT_WORK_MIN = 45
+DEFAULT_BREAK_MIN = 15
+DEFAULT_GOAL_HOURS = 6
+
+def send_client_command(cmd_dict):
+    if not SOCK_FILE.exists():
+        return None
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(0.4)
+        s.connect(str(SOCK_FILE))
+        s.sendall(json.dumps(cmd_dict).encode("utf-8") + b"\n")
+        data = s.recv(16384)
+        s.close()
+        if data:
+            return json.loads(data.decode("utf-8"))
+    except Exception:
+        pass
+    return None
+
+def load_saved_state():
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def format_sot(sec):
+    h = sec // 3600
+    m = (sec % 3600) // 60
+    if h > 0:
+        return f"{h}h {m:02d}m"
+    return f"{m}m"
+
+def format_timer(sec):
+    m = sec // 60
+    s = sec % 60
+    return f"{m:02d}:{s:02d}"
+
+CSS_DATA = b"""
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+window {
+    background-color: #1e2326;
+    color: #d3c6aa;
+}
+
+.card {
+    background-color: #272e33;
+    border: 1px solid #3c4841;
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.card-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #a7c080;
+}
+
+.badge-work {
+    background-color: #283b32;
+    color: #a7c080;
+    border: 1px solid #3c4841;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.badge-break {
+    background-color: #28373b;
+    color: #7fbbb3;
+    border: 1px solid #3c4841;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.badge-paused {
+    background-color: #3b3728;
+    color: #dbbc7f;
+    border: 1px solid #3c4841;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.timer-large {
+    font-size: 34px;
+    font-weight: bold;
+    color: #d3c6aa;
+}
+
+button {
+    background-color: #2e383c;
+    border: 1px solid #414b50;
+    color: #d3c6aa;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+button:hover {
+    background-color: #374247;
+    border-color: #a7c080;
+    color: #a7c080;
+}
+
+.btn-break {
+    background-color: #2a3a34;
+    border: 1px solid #a7c080;
+    color: #a7c080;
+}
+.btn-break:hover {
+    background-color: #32473e;
+}
+
+.btn-active {
+    background-color: #33443a;
+    border: 1px solid #a7c080;
+    color: #a7c080;
+    font-weight: bold;
+}
+
+progressbar trough {
+    background-color: #232a2e;
+    border: 1px solid #3c4841;
+    border-radius: 4px;
+    min-height: 8px;
+}
+
+progressbar progress {
+    border-radius: 4px;
+    background-color: #a7c080;
+}
+
+.rank-1 progress { background-color: #a7c080; }
+.rank-2 progress { background-color: #7fbbb3; }
+.rank-3 progress { background-color: #dbbc7f; }
+.rank-4 progress { background-color: #83c092; }
+.rank-5 progress { background-color: #e69875; }
+.rank-6 progress { background-color: #d3c6aa; }
+"""
+
+class WellbeingDashboard(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Digital Wellbeing & Eye Care")
+        self.set_default_size(980, 640)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        
+        # Apply Everforest CSS
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS_DATA)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+        
+        self.connect("key-press-event", self.on_key_press)
+        self.connect("delete-event", lambda *args: Gtk.main_quit())
+        
+        self.goal_buttons = {}
+        self.preset_buttons = {}
+        self.state = self.fetch_state()
+        
+        # Outer Layout
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        main_box.set_margin_top(16)
+        main_box.set_margin_bottom(16)
+        main_box.set_margin_start(18)
+        main_box.set_margin_end(18)
+        self.add(main_box)
+        
+        # Header Row
+        main_box.pack_start(self.build_header(), False, False, 0)
+        
+        # Two-Column Body
+        body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+        main_box.pack_start(body, True, True, 0)
+        
+        # Left Column (Controls & Live Eye Care Timer)
+        left_panel = self.build_left_panel()
+        left_panel.set_size_request(430, -1)
+        body.pack_start(left_panel, False, False, 0)
+        
+        # Right Column (Cairo Chart & Top Apps)
+        right_panel = self.build_right_panel()
+        body.pack_start(right_panel, True, True, 0)
+        
+        # Initial UI synchronization
+        self.update_left_ui()
+        self.update_apps_ui()
+        
+        # 1-second live ticker
+        GLib.timeout_add(1000, self.on_tick)
+
+    def fetch_state(self):
+        res = send_client_command({"command": "status"})
+        if res and isinstance(res, dict) and "state" in res:
+            return res["state"]
+        return load_saved_state()
+
+    def on_key_press(self, widget, event):
+        if event.keyval in (Gdk.KEY_Escape, Gdk.KEY_q):
+            Gtk.main_quit()
+            return True
+        return False
+
+    def build_header(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        
+        titles = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        title_lbl = Gtk.Label(xalign=0)
+        title_lbl.set_markup("<span size='16000' weight='bold' color='#d3c6aa'>🌿 Digital Wellbeing &amp; Screen Care</span>")
+        sub_lbl = Gtk.Label(xalign=0)
+        sub_lbl.set_markup("<span size='10000' color='#859289'>20-20-20 eye strain reminder, focus sprints &amp; weekly screen time analytics</span>")
+        titles.pack_start(title_lbl, False, False, 0)
+        titles.pack_start(sub_lbl, False, False, 0)
+        box.pack_start(titles, True, True, 0)
+        
+        close_btn = Gtk.Button(label="✕ Close")
+        close_btn.connect("clicked", lambda *args: Gtk.main_quit())
+        box.pack_end(close_btn, False, False, 0)
+        
+        return box
+
+    def build_left_panel(self):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        
+        # 1. Eye Care Timer Card
+        timer_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        timer_card.get_style_context().add_class("card")
+        
+        h_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        c_title = Gtk.Label(xalign=0)
+        c_title.set_markup("<span weight='bold' color='#a7c080'>👀 Eye Care &amp; Break Timer</span>")
+        h_row.pack_start(c_title, True, True, 0)
+        
+        self.phase_badge = Gtk.Label()
+        h_row.pack_end(self.phase_badge, False, False, 0)
+        timer_card.pack_start(h_row, False, False, 0)
+        
+        self.timer_lbl = Gtk.Label(label="45:00")
+        self.timer_lbl.get_style_context().add_class("timer-large")
+        timer_card.pack_start(self.timer_lbl, False, False, 0)
+        
+        self.cycle_lbl = Gtk.Label(xalign=0.5)
+        self.cycle_lbl.set_markup("<span size='9500' color='#859289'>Cycle #0 completed today  •  Live Tracking Active</span>")
+        timer_card.pack_start(self.cycle_lbl, False, False, 0)
+        
+        # Primary Action Buttons
+        actions_row1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions_row1.set_homogeneous(True)
+        self.break_btn = Gtk.Button(label="☕ Take Break Now")
+        self.break_btn.get_style_context().add_class("btn-break")
+        self.break_btn.connect("clicked", self.on_take_break)
+        
+        self.pause_btn = Gtk.Button(label="⏸ Pause Timer")
+        self.pause_btn.connect("clicked", self.on_toggle_pause)
+        actions_row1.pack_start(self.break_btn, True, True, 0)
+        actions_row1.pack_start(self.pause_btn, True, True, 0)
+        timer_card.pack_start(actions_row1, False, False, 0)
+        
+        # Secondary Action Buttons
+        actions_row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions_row2.set_homogeneous(True)
+        snooze_btn = Gtk.Button(label="⏰ Snooze 5m")
+        snooze_btn.connect("clicked", lambda b: self.send_cmd({"command": "snooze"}))
+        skip_btn = Gtk.Button(label="⏭ Skip Phase")
+        skip_btn.connect("clicked", lambda b: self.send_cmd({"command": "skip"}))
+        reset_btn = Gtk.Button(label="🔄 Reset")
+        reset_btn.connect("clicked", lambda b: self.send_cmd({"command": "reset"}))
+        actions_row2.pack_start(snooze_btn, True, True, 0)
+        actions_row2.pack_start(skip_btn, True, True, 0)
+        actions_row2.pack_start(reset_btn, True, True, 0)
+        timer_card.pack_start(actions_row2, False, False, 0)
+        
+        panel.pack_start(timer_card, False, False, 0)
+        
+        # 2. Presets Card
+        preset_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        preset_card.get_style_context().add_class("card")
+        p_title = Gtk.Label(xalign=0)
+        p_title.set_markup("<span weight='bold' color='#a7c080'>⏱ Eye Care Presets</span>")
+        preset_card.pack_start(p_title, False, False, 0)
+        
+        p1 = Gtk.Button(label="20-20-20 Rule (20m work / 1m rest)")
+        p1.connect("clicked", lambda b: self.apply_preset(20, 1))
+        p2 = Gtk.Button(label="Standard Focus (45m work / 15m rest)")
+        p2.connect("clicked", lambda b: self.apply_preset(45, 15))
+        p3 = Gtk.Button(label="Deep Sprint (60m work / 10m rest)")
+        p3.connect("clicked", lambda b: self.apply_preset(60, 10))
+        
+        self.preset_buttons[(20, 1)] = p1
+        self.preset_buttons[(45, 15)] = p2
+        self.preset_buttons[(60, 10)] = p3
+        
+        preset_card.pack_start(p1, False, False, 0)
+        preset_card.pack_start(p2, False, False, 0)
+        preset_card.pack_start(p3, False, False, 0)
+        panel.pack_start(preset_card, False, False, 0)
+        
+        # 3. Daily Screen Time Goal Card
+        goal_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        goal_card.get_style_context().add_class("card")
+        
+        g_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        g_title = Gtk.Label(xalign=0)
+        g_title.set_markup("<span weight='bold' color='#a7c080'>🎯 Daily Screen Time Goal</span>")
+        g_row.pack_start(g_title, True, True, 0)
+        
+        self.goal_pct_lbl = Gtk.Label(xalign=1)
+        g_row.pack_end(self.goal_pct_lbl, False, False, 0)
+        goal_card.pack_start(g_row, False, False, 0)
+        
+        self.sot_summary_lbl = Gtk.Label(xalign=0)
+        self.sot_summary_lbl.set_markup("<span size='9500' color='#d3c6aa'>Today: 0h 00m / Goal: 6h 00m</span>")
+        goal_card.pack_start(self.sot_summary_lbl, False, False, 0)
+        
+        self.goal_bar = Gtk.ProgressBar()
+        goal_card.pack_start(self.goal_bar, False, False, 0)
+        
+        target_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        target_row.set_homogeneous(True)
+        for h in [4, 6, 8, 10]:
+            btn = Gtk.Button(label=f"{h}h Goal")
+            btn.connect("clicked", lambda b, hours=h: self.set_goal(hours))
+            self.goal_buttons[h] = btn
+            target_row.pack_start(btn, True, True, 0)
+        goal_card.pack_start(target_row, False, False, 0)
+        
+        panel.pack_start(goal_card, False, False, 0)
+        return panel
+
+    def build_right_panel(self):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        
+        # 1. 7-Day Chart Card
+        chart_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        chart_card.get_style_context().add_class("card")
+        
+        c_head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        ch_title = Gtk.Label(xalign=0)
+        ch_title.set_markup("<span weight='bold' color='#a7c080'>📊 Last 7 Days Screen Time</span>")
+        c_head.pack_start(ch_title, True, True, 0)
+        
+        self.avg_lbl = Gtk.Label(xalign=1)
+        self.avg_lbl.set_markup("<span size='9500' color='#859289'>Daily Avg: 0h</span>")
+        c_head.pack_end(self.avg_lbl, False, False, 0)
+        chart_card.pack_start(c_head, False, False, 0)
+        
+        self.chart_area = Gtk.DrawingArea()
+        self.chart_area.set_size_request(-1, 145)
+        self.chart_area.connect("draw", self.draw_weekly_chart)
+        chart_card.pack_start(self.chart_area, True, True, 0)
+        
+        panel.pack_start(chart_card, False, False, 0)
+        
+        # 2. Top Apps Breakdown Card
+        apps_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        apps_card.get_style_context().add_class("card")
+        
+        a_head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        a_title = Gtk.Label(xalign=0)
+        a_title.set_markup("<span weight='bold' color='#a7c080'>📱 Top Applications (Past Week)</span>")
+        a_head.pack_start(a_title, True, True, 0)
+        
+        self.weekly_total_lbl = Gtk.Label(xalign=1)
+        self.weekly_total_lbl.set_markup("<span size='9500' color='#859289'>Weekly Total: 0h</span>")
+        a_head.pack_end(self.weekly_total_lbl, False, False, 0)
+        apps_card.pack_start(a_head, False, False, 0)
+        
+        self.apps_container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        apps_card.pack_start(self.apps_container, True, True, 0)
+        panel.pack_start(apps_card, True, True, 0)
+        
+        return panel
+
+    def get_7day_data(self):
+        today = datetime.now().date()
+        history = self.state.get("history", {})
+        days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+        
+        daily_sot = []
+        weekly_apps = {}
+        
+        for d in days:
+            d_str = d.strftime("%Y-%m-%d")
+            day_name = d.strftime("%a")
+            if d == today:
+                sot = self.state.get("screen_time", {}).get("sot_seconds", 0)
+                apps = self.state.get("screen_time", {}).get("apps", {})
+            else:
+                past = history.get(d_str, {})
+                sot = past.get("sot_seconds", 0)
+                apps = past.get("apps", {})
+            
+            sot_h = sot / 3600.0
+            daily_sot.append({
+                "date": d_str,
+                "day": day_name,
+                "sot_seconds": sot,
+                "sot_hours": sot_h,
+                "is_today": (d == today)
+            })
+            for app, sec in apps.items():
+                weekly_apps[app] = weekly_apps.get(app, 0) + sec
+                
+        return daily_sot, weekly_apps
+
+    def draw_weekly_chart(self, widget, cr):
+        width = widget.get_allocated_width()
+        height = widget.get_allocated_height()
+        
+        cr.set_source_rgba(0, 0, 0, 0)
+        cr.paint()
+        
+        daily_sot, _ = self.get_7day_data()
+        goal_h = float(self.state.get("screen_time", {}).get("goal_hours", 6))
+        
+        max_h = max([d["sot_hours"] for d in daily_sot] + [goal_h, 3.5]) * 1.15
+        
+        pad_left = 32
+        pad_right = 16
+        pad_top = 22
+        pad_bottom = 26
+        
+        chart_w = width - pad_left - pad_right
+        chart_h = height - pad_top - pad_bottom
+        
+        # Goal horizontal line
+        goal_y = pad_top + chart_h * (1.0 - (goal_h / max_h))
+        cr.set_source_rgba(0.902, 0.494, 0.502, 0.55) # #e67e80
+        cr.set_line_width(1.0)
+        cr.set_dash([4.0, 4.0])
+        cr.move_to(pad_left, goal_y)
+        cr.line_to(width - pad_right, goal_y)
+        cr.stroke()
+        cr.set_dash([])
+        
+        cr.set_source_rgba(0.902, 0.494, 0.502, 0.85)
+        cr.set_font_size(10)
+        cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        cr.move_to(pad_left + 4, max(12, goal_y - 4))
+        cr.show_text(f"Goal {int(goal_h)}h")
+        
+        # Baseline
+        cr.set_source_rgb(0.235, 0.282, 0.255) # #3c4841
+        cr.set_line_width(1.5)
+        cr.move_to(pad_left, pad_top + chart_h)
+        cr.line_to(width - pad_right, pad_top + chart_h)
+        cr.stroke()
+        
+        # Draw 7 vertical bars
+        n = len(daily_sot)
+        slot_w = chart_w / n
+        bar_w = min(36.0, slot_w * 0.62)
+        
+        for i, d in enumerate(daily_sot):
+            cx = pad_left + i * slot_w + (slot_w / 2.0)
+            bx = cx - (bar_w / 2.0)
+            
+            val_h = (d["sot_hours"] / max_h) * chart_h
+            val_h = max(3.0, val_h)
+            by = pad_top + chart_h - val_h
+            
+            if d["is_today"]:
+                cr.set_source_rgb(0.498, 0.733, 0.702) # #7fbbb3 (Cyan)
+            elif d["sot_hours"] > goal_h:
+                cr.set_source_rgb(0.902, 0.494, 0.502) # #e67e80 (Red)
+            else:
+                cr.set_source_rgb(0.655, 0.753, 0.502) # #a7c080 (Green)
+                
+            radius = min(4.0, bar_w / 2.0)
+            cr.new_sub_path()
+            cr.arc(bx + bar_w - radius, by + radius, radius, -1.5707963, 0)
+            cr.line_to(bx + bar_w, pad_top + chart_h)
+            cr.line_to(bx, pad_top + chart_h)
+            cr.arc(bx + radius, by + radius, radius, 3.1415926, 4.7123889)
+            cr.close_path()
+            cr.fill()
+            
+            # Text value above bar
+            cr.set_source_rgb(0.827, 0.776, 0.667)
+            cr.set_font_size(11)
+            cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD if d["is_today"] else cairo.FONT_WEIGHT_NORMAL)
+            txt = f"{d['sot_hours']:.1f}h"
+            ext = cr.text_extents(txt)
+            cr.move_to(cx - (ext.width / 2.0), by - 5)
+            cr.show_text(txt)
+            
+            # Day name below bar
+            if d["is_today"]:
+                cr.set_source_rgb(0.498, 0.733, 0.702)
+                cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+            else:
+                cr.set_source_rgb(0.522, 0.573, 0.537)
+                cr.select_font_face("JetBrainsMono Nerd Font", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+            cr.set_font_size(11)
+            ext2 = cr.text_extents(d["day"])
+            cr.move_to(cx - (ext2.width / 2.0), pad_top + chart_h + 16)
+            cr.show_text(d["day"])
+
+    def update_left_ui(self):
+        ec = self.state.get("eye_care", {})
+        st = self.state.get("screen_time", {})
+        
+        rem = ec.get("remaining_seconds", 0)
+        phase = ec.get("phase", "work")
+        paused = ec.get("paused", False)
+        cycles = ec.get("cycle_count", 0)
+        
+        self.timer_lbl.set_text(format_timer(rem))
+        
+        sc = self.phase_badge.get_style_context()
+        sc.remove_class("badge-work")
+        sc.remove_class("badge-break")
+        sc.remove_class("badge-paused")
+        
+        if paused:
+            self.phase_badge.set_markup("<span size='9000'>⏸ PAUSED</span>")
+            sc.add_class("badge-paused")
+            self.pause_btn.set_label("▶ Resume Timer")
+        elif phase == "break":
+            self.phase_badge.set_markup("<span size='9000'>☕ BREAK TIME</span>")
+            sc.add_class("badge-break")
+            self.pause_btn.set_label("⏸ Pause Timer")
+        else:
+            self.phase_badge.set_markup("<span size='9000'>🌿 FOCUS SESSION</span>")
+            sc.add_class("badge-work")
+            self.pause_btn.set_label("⏸ Pause Timer")
+            
+        self.cycle_lbl.set_markup(f"<span size='9500' color='#859289'>Cycle #{cycles} completed today  •  Live Tracking Active</span>")
+        
+        # Today's SOT & Goal
+        sot_sec = st.get("sot_seconds", 0)
+        goal_h = st.get("goal_hours", 6)
+        pct = min(1.0, sot_sec / (goal_h * 3600.0)) if goal_h > 0 else 0.0
+        
+        self.sot_summary_lbl.set_markup(
+            f"<span size='9500' color='#d3c6aa'>Today: <b>{format_sot(sot_sec)}</b> / Goal: <b>{goal_h}h 00m</b></span>"
+        )
+        self.goal_pct_lbl.set_markup(f"<span size='9500' weight='bold' color='#a7c080'>{int(pct*100)}% reached</span>")
+        self.goal_bar.set_fraction(pct)
+        
+        # Highlight active goal button
+        for h, btn in self.goal_buttons.items():
+            btn_sc = btn.get_style_context()
+            if h == goal_h:
+                btn_sc.add_class("btn-active")
+            else:
+                btn_sc.remove_class("btn-active")
+                
+        # Highlight active preset button
+        work_m = ec.get("work_duration", DEFAULT_WORK_MIN * 60) // 60
+        break_m = ec.get("break_duration", DEFAULT_BREAK_MIN * 60) // 60
+        for (wm, bm), btn in self.preset_buttons.items():
+            btn_sc = btn.get_style_context()
+            if wm == work_m and bm == break_m:
+                btn_sc.add_class("btn-active")
+            else:
+                btn_sc.remove_class("btn-active")
+
+    def update_apps_ui(self):
+        daily_sot, weekly_apps = self.get_7day_data()
+        
+        total_sec = sum(weekly_apps.values())
+        avg_h = (total_sec / 7.0) / 3600.0
+        self.avg_lbl.set_markup(f"<span size='9500' color='#859289'>Daily Avg: <b>{avg_h:.1f}h</b></span>")
+        self.weekly_total_lbl.set_markup(f"<span size='9500' color='#859289'>Weekly Total: <b>{total_sec/3600.0:.1f}h</b></span>")
+        
+        for child in self.apps_container.get_children():
+            self.apps_container.remove(child)
+            
+        top_apps = sorted(weekly_apps.items(), key=lambda x: x[1], reverse=True)[:6]
+        max_app_sec = top_apps[0][1] if top_apps else 1
+        
+        for idx, (app, sec) in enumerate(top_apps, 1):
+            row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            
+            label_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            name_lbl = Gtk.Label(xalign=0)
+            name_lbl.set_markup(f"<span size='10000' weight='bold' color='#d3c6aa'>{idx}. {app}</span>")
+            label_row.pack_start(name_lbl, True, True, 0)
+            
+            pct = (sec / total_sec * 100.0) if total_sec > 0 else 0
+            time_lbl = Gtk.Label(xalign=1)
+            time_lbl.set_markup(f"<span size='9500' color='#859289'>{format_sot(sec)}  •  {pct:.1f}%</span>")
+            label_row.pack_end(time_lbl, False, False, 0)
+            row.pack_start(label_row, False, False, 0)
+            
+            bar = Gtk.ProgressBar()
+            bar.set_fraction(sec / max_app_sec)
+            bar.get_style_context().add_class(f"rank-{idx}")
+            row.pack_start(bar, False, False, 0)
+            
+            self.apps_container.pack_start(row, False, False, 0)
+            
+        self.apps_container.show_all()
+
+    def send_cmd(self, cmd_dict):
+        send_client_command(cmd_dict)
+        self.state = self.fetch_state()
+        self.update_left_ui()
+        self.update_apps_ui()
+        self.chart_area.queue_draw()
+
+    def on_take_break(self, widget):
+        self.send_cmd({"command": "skip"})
+
+    def on_toggle_pause(self, widget):
+        self.send_cmd({"command": "toggle"})
+
+    def apply_preset(self, work_m, break_m):
+        self.send_cmd({"command": "set_work", "minutes": work_m})
+        self.send_cmd({"command": "set_break", "minutes": break_m})
+        self.send_cmd({"command": "reset"})
+
+    def set_goal(self, hours):
+        self.send_cmd({"command": "set_goal", "hours": hours})
+
+    def on_tick(self):
+        self.state = self.fetch_state()
+        self.update_left_ui()
+        self.chart_area.queue_draw()
+        return True
+
+def main():
+    app = WellbeingDashboard()
+    app.show_all()
+    Gtk.main()
+
+if __name__ == "__main__":
+    main()
