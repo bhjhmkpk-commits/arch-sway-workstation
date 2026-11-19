@@ -125,6 +125,13 @@ if [ -f "$SCRIPT_DIR/dotfiles/config/polkit-1/50-ventoy.rules" ]; then
     sudo chmod 644 "/etc/polkit-1/rules.d/50-ventoy.rules"
 fi
 
+# Deploy modprobe rules (prevent Intel ME ACPI poweroff hang)
+if [ -f "$SCRIPT_DIR/dotfiles/config/modprobe.d/blacklist-mei.conf" ]; then
+    sudo mkdir -p /etc/modprobe.d
+    sudo cp -f "$SCRIPT_DIR/dotfiles/config/modprobe.d/blacklist-mei.conf" "/etc/modprobe.d/blacklist-mei.conf"
+    sudo chmod 644 "/etc/modprobe.d/blacklist-mei.conf"
+fi
+
 # Deploy 512x512 web application icons & desktop entries
 cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/512x512/apps/"
 cp -a "$SCRIPT_DIR/dotfiles/icons/"* "$HOME/.local/share/icons/hicolor/256x256/apps/"
